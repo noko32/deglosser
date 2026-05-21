@@ -19,19 +19,25 @@ export const metadata: Metadata = {
     "Search any song. Get lyrics, BPM, key, credits, samples, and album art on one page.",
 };
 
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      >
-        <body className="min-h-full flex flex-col">{children}</body>
-      </html>
-    </ClerkProvider>
+  const content = (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
   );
+
+  if (clerkEnabled) {
+    return <ClerkProvider>{content}</ClerkProvider>;
+  }
+
+  return content;
 }

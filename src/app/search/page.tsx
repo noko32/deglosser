@@ -2,7 +2,7 @@ import { searchRecordings } from "@/lib/musicbrainz";
 import Link from "next/link";
 
 function formatDuration(ms: number | null): string {
-  if (!ms) return "—";
+  if (!ms) return "\u2014";
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
@@ -18,7 +18,7 @@ export default async function SearchPage({
   if (!q) {
     return (
       <main className="flex flex-1 items-center justify-center p-8">
-        <p className="text-gray-500">Enter a search query to find songs.</p>
+        <p className="text-dg-text-muted">Enter a search query to find songs.</p>
       </main>
     );
   }
@@ -27,17 +27,17 @@ export default async function SearchPage({
 
   return (
     <main className="mx-auto max-w-3xl p-8">
-      <h1 className="text-2xl font-bold">
+      <h1 className="text-2xl font-bold text-dg-text">
         Results for &ldquo;{q}&rdquo;
       </h1>
-      <p className="mt-1 text-sm text-gray-500">
+      <p className="mt-1 text-sm text-dg-text-muted">
         {results.count} recording{results.count !== 1 ? "s" : ""} found
       </p>
 
       {results.recordings.length === 0 ? (
-        <p className="mt-8 text-gray-500">No results found.</p>
+        <p className="mt-8 text-dg-text-muted">No results found.</p>
       ) : (
-        <ul className="mt-6 divide-y divide-gray-200">
+        <ul className="mt-6 divide-y divide-dg-border">
           {results.recordings.map((recording) => {
             const artist =
               recording.artistCredit.map((ac) => ac.name).join(", ") ||
@@ -51,19 +51,19 @@ export default async function SearchPage({
               <li key={recording.id}>
                 <Link
                   href={`/song/${recording.id}`}
-                  className="block py-4 transition-colors hover:bg-gray-50"
+                  className="block rounded-lg py-4 px-3 -mx-3 transition-colors hover:bg-dg-surface"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-gray-900">
+                      <p className="truncate font-medium text-dg-text">
                         {recording.title}
                       </p>
-                      <p className="truncate text-sm text-gray-500">
+                      <p className="truncate text-sm text-dg-text-secondary">
                         {artist}
-                        {album ? ` · ${album.title}` : ""}
+                        {album ? ` \u00b7 ${album.title}` : ""}
                       </p>
                     </div>
-                    <div className="shrink-0 text-sm text-gray-400">
+                    <div className="shrink-0 text-sm font-mono text-dg-text-muted">
                       {formatDuration(recording.length)}
                     </div>
                   </div>

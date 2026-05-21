@@ -22,6 +22,8 @@
 
 # misc
 .DS_Store
+*.DS_Store
+Thumbs.db
 *.pem
 
 # debug
@@ -43,3 +45,13 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# personal planning & IDE agent rules (not part of the app)
+/plan/
+/.cursor/

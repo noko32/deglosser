@@ -76,7 +76,7 @@ export default async function SearchPage({
             return (
               <li key={recording.id}>
                 <Link
-                  href={`/song/${recording.id}`}
+                  href={`/song/${recording.id}?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(recording.title)}`}
                   className="block rounded-lg py-4 px-3 -mx-3 transition-colors hover:bg-dg-surface"
                 >
                   <div className="flex items-center justify-between gap-4">

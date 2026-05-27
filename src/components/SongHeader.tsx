@@ -1,5 +1,13 @@
 import Image from "next/image";
-import type { SongData } from "@/lib/types";
+
+interface SongHeaderProps {
+  title: string;
+  artist: string;
+  albumTitle: string | null;
+  releaseDate: string | null;
+  durationMs: number | null;
+  coverArtUrl: string | null;
+}
 
 function formatDuration(ms: number): string {
   const mins = Math.floor(ms / 60000);
@@ -7,13 +15,20 @@ function formatDuration(ms: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-export function SongHeader({ song }: { song: SongData }) {
+export function SongHeader({
+  title,
+  artist,
+  albumTitle,
+  releaseDate,
+  durationMs,
+  coverArtUrl,
+}: SongHeaderProps) {
   return (
     <div className="flex gap-6 items-start">
-      {song.coverArtUrl ? (
+      {coverArtUrl ? (
         <Image
-          src={song.coverArtUrl}
-          alt={`${song.albumTitle ?? song.title} cover art`}
+          src={coverArtUrl}
+          alt={`${albumTitle ?? title} cover art`}
           width={200}
           height={200}
           className="rounded-lg shrink-0 shadow-lg"
@@ -27,15 +42,15 @@ export function SongHeader({ song }: { song: SongData }) {
 
       <div className="min-w-0 pt-2">
         <h1 className="text-3xl font-bold text-dg-text truncate">
-          {song.title}
+          {title}
         </h1>
-        <p className="mt-1 text-lg text-dg-text-secondary">{song.artist}</p>
-        {song.albumTitle && (
-          <p className="mt-1 text-sm text-dg-text-muted">{song.albumTitle}</p>
+        <p className="mt-1 text-lg text-dg-text-secondary">{artist}</p>
+        {albumTitle && (
+          <p className="mt-1 text-sm text-dg-text-muted">{albumTitle}</p>
         )}
         <div className="mt-3 flex flex-wrap gap-3 text-xs text-dg-text-muted">
-          {song.releaseDate && <span>{song.releaseDate}</span>}
-          {song.durationMs && <span>{formatDuration(song.durationMs)}</span>}
+          {releaseDate && <span>{releaseDate}</span>}
+          {durationMs && <span>{formatDuration(durationMs)}</span>}
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@ export default function Home() {
           <input
             type="text"
             name="q"
-            placeholder="Artist or song name..."
+            placeholder="Song name or 'song by artist'..."
             required
             className="flex-1 rounded-lg border border-dg-border bg-dg-surface px-4 py-3 text-dg-text placeholder-dg-text-muted focus:border-dg-accent-blue focus:outline-none focus:ring-2 focus:ring-dg-accent-blue/25"
           />

@@ -1,6 +1,8 @@
 import { searchRecordings } from "@/lib/musicbrainz";
 import Link from "next/link";
 
+const PER_PAGE = 20;
+
 function formatDuration(ms: number | null): string {
   if (!ms) return "\u2014";
   const minutes = Math.floor(ms / 60000);
@@ -11,9 +13,9 @@ function formatDuration(ms: number | null): string {
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, page: pageStr } = await searchParams;
 
   if (!q) {
     return (
@@ -23,7 +25,30 @@ export default async function SearchPage({
     );
   }
 
-  const results = await searchRecordings(q, 20);
+  const page = Math.max(1, parseInt(pageStr ?? "1", 10) || 1);
+  const offset = (page - 1) * PER_PAGE;
+
+  let results;
+  try {
+    results = await searchRecordings(q, PER_PAGE, offset);
+  } catch {
+    return (
+      <main className="mx-auto max-w-3xl p-8">
+        <p className="text-red-400">
+          Search failed — MusicBrainz may be rate-limiting or temporarily
+          unavailable. Please wait a moment and try again.
+        </p>
+        <Link
+          href="/"
+          className="mt-4 inline-block text-dg-accent-blue hover:underline"
+        >
+          Back to search
+        </Link>
+      </main>
+    );
+  }
+
+  const totalPages = Math.ceil(results.count / PER_PAGE);
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -32,6 +57,7 @@ export default async function SearchPage({
       </h1>
       <p className="mt-1 text-sm text-dg-text-muted">
         {results.count} recording{results.count !== 1 ? "s" : ""} found
+        {totalPages > 1 && ` · page ${page} of ${totalPages}`}
       </p>
 
       {results.recordings.length === 0 ? (
@@ -72,6 +98,36 @@ export default async function SearchPage({
             );
           })}
         </ul>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="mt-8 flex items-center justify-between">
+          {page > 1 ? (
+            <Link
+              href={`/search?q=${encodeURIComponent(q)}&page=${page - 1}`}
+              className="text-sm text-dg-accent-blue hover:underline"
+            >
+              &larr; Previous
+            </Link>
+          ) : (
+            <span />
+          )}
+
+          <span className="text-sm text-dg-text-muted">
+            {page} / {totalPages}
+          </span>
+
+          {page < totalPages ? (
+            <Link
+              href={`/search?q=${encodeURIComponent(q)}&page=${page + 1}`}
+              className="text-sm text-dg-accent-blue hover:underline"
+            >
+              Next &rarr;
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       )}
     </main>
   );

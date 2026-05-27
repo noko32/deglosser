@@ -1,3 +1,11 @@
+import type {
+  MBRecordingDetail,
+  MBRelease,
+  MBRelation,
+  Credit,
+  SampleRelationship,
+} from "./types";
+
 const MB_BASE = "https://musicbrainz.org/ws/2";
 const USER_AGENT = "Deglosser/0.1.0 (https://github.com/noko32/deglosser)";
 
@@ -58,12 +66,35 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   return res;
 }
 
+function buildSearchQuery(raw: string): string {
+  // "X by Y" pattern
+  const byMatch = raw.match(/^(.+?)\s+by\s+(.+)$/i);
+  if (byMatch) {
+    return `recording:${byMatch[1].trim()} AND artist:${byMatch[2].trim()}`;
+  }
+  // "Artist - Title" pattern
+  const dashMatch = raw.match(/^(.+?)\s*[-–—]\s*(.+)$/);
+  if (dashMatch) {
+    return `recording:${dashMatch[2].trim()} AND artist:${dashMatch[1].trim()}`;
+  }
+  // Multi-word without separator: last word as artist, rest as recording
+  const words = raw.trim().split(/\s+/);
+  if (words.length >= 2) {
+    const artist = words[words.length - 1];
+    const title = words.slice(0, -1).join(" ");
+    return `recording:${title} AND artist:${artist}`;
+  }
+  return raw;
+}
+
 export async function searchRecordings(
   query: string,
-  limit = 10
+  limit = 10,
+  offset = 0
 ): Promise<MBSearchResult> {
-  const encoded = encodeURIComponent(query);
-  const url = `${MB_BASE}/recording/?query=${encoded}&fmt=json&limit=${limit}`;
+  const luceneQuery = buildSearchQuery(query);
+  const encoded = encodeURIComponent(luceneQuery);
+  const url = `${MB_BASE}/recording/?query=${encoded}&fmt=json&limit=${limit}&offset=${offset}`;
   const res = await rateLimitedFetch(url);
   const data = await res.json();
 
@@ -91,14 +122,113 @@ export async function searchRecordings(
   return { recordings, count: data.count ?? 0 };
 }
 
-export async function getRecordingWithRels(mbid: string) {
-  const url = `${MB_BASE}/recording/${mbid}?inc=artist-credits+releases+work-rels&fmt=json`;
+const ENRICHED_INC = [
+  "artist-credits",
+  "releases",
+  "release-groups",
+  "work-rels",
+  "artist-rels",
+  "work-level-rels",
+  "recording-rels",
+].join("+");
+
+export async function getRecordingWithRels(
+  mbid: string
+): Promise<MBRecordingDetail> {
+  const url = `${MB_BASE}/recording/${mbid}?inc=${ENRICHED_INC}&fmt=json`;
   const res = await rateLimitedFetch(url);
   return res.json();
 }
 
-export async function getWorkCredits(workId: string) {
-  const url = `${MB_BASE}/work/${workId}?inc=artist-rels&fmt=json`;
-  const res = await rateLimitedFetch(url);
-  return res.json();
+/**
+ * Pick the best release: prefer Album (non-compilation), then earliest date.
+ */
+export function selectBestRelease(
+  releases: MBRelease[]
+): MBRelease | null {
+  if (releases.length === 0) return null;
+
+  const albums = releases.filter((r) => {
+    const rg = r["release-group"];
+    if (!rg) return false;
+    const primary = rg["primary-type"];
+    const secondary = rg["secondary-types"] ?? [];
+    return (
+      primary === "Album" &&
+      !secondary.includes("Compilation") &&
+      !secondary.includes("DJ-mix")
+    );
+  });
+
+  const candidates = albums.length > 0 ? albums : releases;
+
+  candidates.sort((a, b) => {
+    const dateA = a.date ?? "9999";
+    const dateB = b.date ?? "9999";
+    return dateA.localeCompare(dateB);
+  });
+
+  return candidates[0];
+}
+
+/**
+ * Extract credits from work-level-rels and recording-level artist-rels.
+ */
+export function extractCredits(relations: MBRelation[]): Credit[] {
+  const credits: Credit[] = [];
+
+  for (const rel of relations) {
+    // Recording-level artist rels (producer, mix, etc.)
+    if (rel["target"] && rel.artist && rel.type) {
+      credits.push({
+        name: rel.artist.name,
+        role: rel.type,
+        source: "musicbrainz",
+      });
+    }
+
+    // Work-level rels (nested inside work relations)
+    if (rel.work?.relations) {
+      for (const workRel of rel.work.relations) {
+        if (workRel.artist) {
+          credits.push({
+            name: workRel.artist.name,
+            role: workRel.type,
+            source: "musicbrainz",
+          });
+        }
+      }
+    }
+  }
+
+  // Deduplicate by name+role
+  const seen = new Set<string>();
+  return credits.filter((c) => {
+    const key = `${c.name}::${c.role}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Extract sample relationships from recording-rels.
+ */
+export function extractSamples(
+  relations: MBRelation[]
+): SampleRelationship[] {
+  return relations
+    .filter((rel) => rel.type === "samples material" && rel.recording)
+    .map((rel) => ({
+      title: rel.recording!.title,
+      artist:
+        rel.recording!["artist-credit"]
+          ?.map((ac) => ac.name)
+          .join(", ") ?? "Unknown",
+      mbid: rel.recording!.id,
+      direction:
+        rel.direction === "forward"
+          ? ("samples" as const)
+          : ("sampled_by" as const),
+    }));
 }

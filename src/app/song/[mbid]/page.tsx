@@ -1,5 +1,77 @@
-import { getRecordingWithRels } from "@/lib/musicbrainz";
 import Link from "next/link";
+import type { SongData } from "@/lib/types";
+import {
+  getRecordingWithRels,
+  selectBestRelease,
+  extractCredits,
+  extractSamples,
+} from "@/lib/musicbrainz";
+import { getLyrics } from "@/lib/lrclib";
+import { getCoverArt } from "@/lib/cover-art";
+import { createProvider } from "@/lib/audio-features";
+import { getDiscogsCredits } from "@/lib/discogs";
+import { getCachedSong, cacheSong } from "@/lib/cache";
+import { SongHeader } from "@/components/SongHeader";
+import { AudioFeatures } from "@/components/AudioFeatures";
+import { LyricsPanel } from "@/components/LyricsPanel";
+import { CreditsBlock } from "@/components/CreditsBlock";
+import { SamplesBlock } from "@/components/SamplesBlock";
+
+async function aggregateSong(mbid: string): Promise<SongData> {
+  const cached = await getCachedSong(mbid);
+  if (cached) return cached;
+
+  const recording = await getRecordingWithRels(mbid);
+
+  const artist = recording["artist-credit"]
+    ?.map((ac) => ac.name)
+    .join(", ") ?? "Unknown Artist";
+  const title = recording.title;
+  const bestRelease = selectBestRelease(recording.releases ?? []);
+  const albumTitle = bestRelease?.title ?? null;
+  const albumMbid = bestRelease?.id ?? null;
+  const releaseDate = bestRelease?.date ?? null;
+  const durationMs = recording.length ?? null;
+
+  const credits = extractCredits(recording.relations ?? []);
+  const sampleRelationships = extractSamples(recording.relations ?? []);
+
+  const provider = createProvider();
+
+  const [lyricsResult, coverArtUrl, audioFeatures, discogsEnrichment] =
+    await Promise.all([
+      getLyrics(artist, title),
+      albumMbid ? getCoverArt(albumMbid) : Promise.resolve(null),
+      provider.getFeatures({ mbid, artist, title }),
+      albumTitle
+        ? getDiscogsCredits(artist, albumTitle, title)
+        : Promise.resolve(null),
+    ]);
+
+  const songData: SongData = {
+    mbid,
+    title,
+    artist,
+    albumTitle,
+    albumMbid,
+    releaseDate,
+    durationMs,
+    coverArtUrl,
+    lyrics: lyricsResult?.plainLyrics ?? null,
+    syncedLyrics: lyricsResult?.syncedLyrics ?? null,
+    bpm: audioFeatures?.bpm ? Math.round(audioFeatures.bpm) : null,
+    musicalKey: audioFeatures?.key ?? null,
+    audioFeatures,
+    credits,
+    sampleRelationships,
+    discogsEnrichment,
+    metadata: {},
+  };
+
+  cacheSong(songData).catch(() => {});
+
+  return songData;
+}
 
 export default async function SongPage({
   params,
@@ -8,55 +80,46 @@ export default async function SongPage({
 }) {
   const { mbid } = await params;
 
-  let recording;
+  let song: SongData;
   try {
-    recording = await getRecordingWithRels(mbid);
+    song = await aggregateSong(mbid);
   } catch {
     return (
       <main className="mx-auto max-w-3xl p-8">
         <p className="text-red-400">Failed to load song data.</p>
-        <Link href="/" className="mt-4 inline-block text-dg-accent-blue hover:underline">
+        <Link
+          href="/"
+          className="mt-4 inline-block text-dg-accent-blue hover:underline"
+        >
           Back to search
         </Link>
       </main>
     );
   }
 
-  const artist =
-    recording["artist-credit"]
-      ?.map((ac: { name: string }) => ac.name)
-      .join(", ") || "Unknown Artist";
-
-  const release = recording.releases?.[0];
-
   return (
     <main className="mx-auto max-w-3xl p-8">
-      <Link href="/" className="text-sm text-dg-accent-blue hover:underline">
+      <Link
+        href="/"
+        className="text-sm text-dg-accent-blue hover:underline"
+      >
         &larr; Back to search
       </Link>
 
-      <div className="mt-6">
-        <h1 className="text-3xl font-bold text-dg-text">{recording.title}</h1>
-        <p className="mt-1 text-lg text-dg-text-secondary">{artist}</p>
-        {release && (
-          <p className="mt-1 text-sm text-dg-text-muted">
-            {release.title}
-            {release.date ? ` (${release.date})` : ""}
-          </p>
-        )}
-      </div>
+      <div className="mt-6 space-y-6">
+        <SongHeader song={song} />
+        <AudioFeatures features={song.audioFeatures} />
 
-      <div className="panel mt-8 p-6">
-        <p className="text-sm font-medium text-dg-accent-violet uppercase">
-          Coming soon
-        </p>
-        <p className="mt-2 text-dg-text-secondary">
-          Lyrics, BPM, key, credits, samples, and album art will appear here
-          once the aggregation layer is built.
-        </p>
-        <p className="mt-4 text-xs font-mono text-dg-text-muted">
-          MusicBrainz Recording ID: {mbid}
-        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <LyricsPanel lyrics={song.lyrics} />
+          <div className="space-y-6">
+            <CreditsBlock
+              credits={song.credits}
+              discogs={song.discogsEnrichment}
+            />
+            <SamplesBlock samples={song.sampleRelationships} />
+          </div>
+        </div>
       </div>
     </main>
   );

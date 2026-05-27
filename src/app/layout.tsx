@@ -31,7 +31,18 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <footer className="mt-auto py-6 px-8 text-center">
+          <p className="text-[11px] text-dg-text-muted max-w-2xl mx-auto leading-relaxed">
+            This application uses Discogs&apos; API but is not affiliated with,
+            sponsored or endorsed by Discogs. &quot;Discogs&quot; is a trademark
+            of Zink Media, LLC. Song metadata provided by MusicBrainz, lyrics
+            by LRCLIB, audio features by FreqBlog, album art by Cover Art
+            Archive.
+          </p>
+        </footer>
+      </body>
     </html>
   );
 

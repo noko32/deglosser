@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Deglosser — Song Info Aggregator",
+  title: "Melomano — Song Info Aggregator",
   description:
     "Search any song. Get lyrics, BPM, key, credits, samples, and album art on one page.",
   openGraph: {
-    title: "Deglosser — Song Info Aggregator",
+    title: "Melomano — Song Info Aggregator",
     description:
       "Search any song. Get lyrics, BPM, key, credits, samples, and album art on one page.",
-    siteName: "Deglosser",
+    siteName: "Melomano",
     type: "website",
   },
 };

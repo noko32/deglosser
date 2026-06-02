@@ -6,7 +6,7 @@ export default function Home() {
     <main className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-dg-text">
-          Deglosser
+          Melomano
         </h1>
         <p className="mt-3 text-lg text-dg-text-secondary">
           Search any song. Get lyrics, BPM, key, credits, and more.

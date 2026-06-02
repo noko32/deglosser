@@ -3,8 +3,8 @@ import Link from "next/link";
 import { FavoritesList } from "./FavoritesList";
 
 export const metadata: Metadata = {
-  title: "Favorites — Deglosser",
-  description: "Your saved songs on Deglosser.",
+  title: "Favorites — Melomano",
+  description: "Your saved songs on Melomano.",
 };
 
 export default function FavoritesPage() {

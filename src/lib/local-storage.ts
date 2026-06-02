@@ -11,8 +11,8 @@ export interface RecentSearch {
   searchedAt: number;
 }
 
-const FAVORITES_KEY = "deglosser-favorites";
-const SEARCHES_KEY = "deglosser-recent-searches";
+const FAVORITES_KEY = "melomano-favorites";
+const SEARCHES_KEY = "melomano-recent-searches";
 const MAX_RECENT_SEARCHES = 10;
 
 export function getFavorites(): FavoriteSong[] {

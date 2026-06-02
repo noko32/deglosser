@@ -1,7 +1,7 @@
 import type { DiscogsEnrichment, DiscogsCredit } from "./types";
 
 const DISCOGS_BASE = "https://api.discogs.com";
-const USER_AGENT = "Deglosser/0.1.0 (https://github.com/noko32/deglosser)";
+const USER_AGENT = "Melomano/1.0.0 (https://github.com/noko32/deglosser)";
 
 interface DiscogsExtraArtist {
   name: string;

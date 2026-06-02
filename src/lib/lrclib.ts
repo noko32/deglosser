@@ -1,5 +1,5 @@
 const LRCLIB_BASE = "https://lrclib.net/api";
-const USER_AGENT = "Deglosser/0.1.0 (https://github.com/noko32/deglosser)";
+const USER_AGENT = "Melomano/1.0.0 (https://github.com/noko32/deglosser)";
 
 export interface LrclibResult {
   plainLyrics: string | null;

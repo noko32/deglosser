@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 const MB_BASE = "https://musicbrainz.org/ws/2";
-const USER_AGENT = "Deglosser/0.1.0 (https://github.com/noko32/deglosser)";
+const USER_AGENT = "Melomano/1.0.0 (https://github.com/noko32/deglosser)";
 
 export interface MBRecording {
   id: string;

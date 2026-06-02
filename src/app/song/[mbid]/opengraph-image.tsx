@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getCachedSong } from "@/lib/cache";
 
-export const alt = "Deglosser — Song Info";
+export const alt = "Melomano — Song Info";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -71,7 +71,7 @@ export default async function OGImage({
               marginBottom: "16px",
             }}
           >
-            DEGLOSSER
+            MELOMANO
           </div>
           <div
             style={{

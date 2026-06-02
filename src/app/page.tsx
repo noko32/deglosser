@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { RecentSearches } from "@/components/RecentSearches";
+
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
@@ -27,6 +30,15 @@ export default function Home() {
           </button>
         </div>
       </form>
+
+      <RecentSearches />
+
+      <Link
+        href="/favorites"
+        className="text-sm text-dg-text-muted hover:text-dg-accent-blue transition-colors"
+      >
+        View favorites
+      </Link>
     </main>
   );
 }

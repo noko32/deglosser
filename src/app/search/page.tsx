@@ -1,5 +1,6 @@
 import { searchRecordings } from "@/lib/musicbrainz";
 import Link from "next/link";
+import { SearchRecorder } from "@/components/SearchRecorder";
 
 const PER_PAGE = 20;
 
@@ -59,6 +60,8 @@ export default async function SearchPage({
         {results.count} recording{results.count !== 1 ? "s" : ""} found
         {totalPages > 1 && ` · page ${page} of ${totalPages}`}
       </p>
+
+      <SearchRecorder query={q} />
 
       {results.recordings.length === 0 ? (
         <p className="mt-8 text-dg-text-muted">No results found.</p>

@@ -44,7 +44,9 @@ export async function getCachedSong(
       credits: (row.credits as SongData["credits"]) ?? [],
       sampleRelationships:
         (row.sampleRelationships as SongData["sampleRelationships"]) ?? [],
-      discogsEnrichment: null,
+      discogsEnrichment:
+        ((row.metadata as Record<string, unknown>)
+          ?.discogsEnrichment as SongData["discogsEnrichment"]) ?? null,
       metadata: (row.metadata as Record<string, unknown>) ?? {},
     };
   } catch {

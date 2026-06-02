@@ -10,10 +10,7 @@ export default async function proxy(request: NextRequest) {
     "@clerk/nextjs/server"
   );
 
-  const isProtectedRoute = createRouteMatcher([
-    "/favorites(.*)",
-    "/history(.*)",
-  ]);
+  const isProtectedRoute = createRouteMatcher(["/history(.*)"]);
 
   const handler = clerkMiddleware(async (auth, req) => {
     if (isProtectedRoute(req)) {

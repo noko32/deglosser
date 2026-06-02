@@ -24,6 +24,8 @@ import { AudioFeatures } from "@/components/AudioFeatures";
 import { LyricsPanel } from "@/components/LyricsPanel";
 import { CreditsBlock } from "@/components/CreditsBlock";
 import { SamplesBlock } from "@/components/SamplesBlock";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { ShareButton } from "@/components/ShareButton";
 
 // --- Skeleton fallback components ---
 
@@ -198,9 +200,25 @@ export default async function SongPage({
   if (cached) {
     return (
       <main className="mx-auto max-w-3xl p-8">
-        <Link href="/" className="text-sm text-dg-accent-blue hover:underline">
-          &larr; Back to search
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-sm text-dg-accent-blue hover:underline"
+          >
+            &larr; Back to search
+          </Link>
+          <div className="flex items-center gap-3">
+            <ShareButton mbid={mbid} />
+            <FavoriteButton
+              song={{
+                mbid,
+                title: cached.title,
+                artist: cached.artist,
+                coverArtUrl: cached.coverArtUrl,
+              }}
+            />
+          </div>
+        </div>
         <div className="mt-6 space-y-6">
           <SongHeader
             title={cached.title}
@@ -296,9 +314,25 @@ export default async function SongPage({
   // Return JSX immediately — Suspense boundaries stream as promises resolve
   return (
     <main className="mx-auto max-w-3xl p-8">
-      <Link href="/" className="text-sm text-dg-accent-blue hover:underline">
-        &larr; Back to search
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/"
+          className="text-sm text-dg-accent-blue hover:underline"
+        >
+          &larr; Back to search
+        </Link>
+        <div className="flex items-center gap-3">
+          <ShareButton mbid={mbid} />
+          <FavoriteButton
+            song={{
+              mbid,
+              title,
+              artist,
+              coverArtUrl: null,
+            }}
+          />
+        </div>
+      </div>
 
       <div className="mt-6 space-y-6">
         <Suspense fallback={<SongHeaderSkeleton />}>

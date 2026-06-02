@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   title: "Deglosser — Song Info Aggregator",
   description:
     "Search any song. Get lyrics, BPM, key, credits, samples, and album art on one page.",
+  openGraph: {
+    title: "Deglosser — Song Info Aggregator",
+    description:
+      "Search any song. Get lyrics, BPM, key, credits, samples, and album art on one page.",
+    siteName: "Deglosser",
+    type: "website",
+  },
 };
 
 const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;

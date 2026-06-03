@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { RecentSearches } from "@/components/RecentSearches";
 
 export default function Home() {
@@ -32,13 +31,6 @@ export default function Home() {
       </form>
 
       <RecentSearches />
-
-      <Link
-        href="/favorites"
-        className="text-sm text-dg-text-muted hover:text-dg-accent-blue transition-colors"
-      >
-        View favorites
-      </Link>
     </main>
   );
 }

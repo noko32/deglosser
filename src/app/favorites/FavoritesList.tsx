@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   getFavorites,
@@ -8,18 +8,17 @@ import {
   type FavoriteSong,
 } from "@/lib/local-storage";
 
-export function FavoritesList() {
-  const [mounted, setMounted] = useState(false);
-  const [favorites, setFavorites] = useState<FavoriteSong[]>([]);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setFavorites(getFavorites());
-    setMounted(true);
-  }, []);
+export function FavoritesList() {
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const [, rerender] = useReducer((x: number) => x + 1, 0);
+
+  const favorites: FavoriteSong[] = mounted ? getFavorites() : [];
 
   function handleRemove(song: FavoriteSong) {
     toggleFavorite(song);
-    setFavorites(getFavorites());
+    rerender();
   }
 
   if (!mounted) {

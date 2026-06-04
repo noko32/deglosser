@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   getRecentSearches,
@@ -8,18 +8,17 @@ import {
   type RecentSearch,
 } from "@/lib/local-storage";
 
-export function RecentSearches() {
-  const [mounted, setMounted] = useState(false);
-  const [searches, setSearches] = useState<RecentSearch[]>([]);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setSearches(getRecentSearches());
-    setMounted(true);
-  }, []);
+export function RecentSearches() {
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const [, rerender] = useReducer((x: number) => x + 1, 0);
+
+  const searches: RecentSearch[] = mounted ? getRecentSearches() : [];
 
   function handleClear() {
     clearRecentSearches();
-    setSearches([]);
+    rerender();
   }
 
   if (!mounted || searches.length === 0) return null;

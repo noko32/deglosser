@@ -18,7 +18,7 @@ export default async function proxy(request: NextRequest) {
     }
   });
 
-  return handler(request, {} as any);
+  return handler(request, {} as unknown as Parameters<typeof handler>[1]);
 }
 
 export const config = {

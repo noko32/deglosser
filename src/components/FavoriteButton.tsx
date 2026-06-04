@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useReducer, useSyncExternalStore } from "react";
 import { toggleFavorite, isFavorited } from "@/lib/local-storage";
+
+const emptySubscribe = () => () => {};
 
 interface Props {
   song: {
@@ -13,17 +15,14 @@ interface Props {
 }
 
 export function FavoriteButton({ song }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [isFav, setIsFav] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const [, rerender] = useReducer((x: number) => x + 1, 0);
 
-  useEffect(() => {
-    setIsFav(isFavorited(song.mbid));
-    setMounted(true);
-  }, [song.mbid]);
+  const isFav = mounted && isFavorited(song.mbid);
 
   function handleClick() {
-    const nowFav = toggleFavorite(song);
-    setIsFav(nowFav);
+    toggleFavorite(song);
+    rerender();
   }
 
   return (

@@ -3,13 +3,13 @@ import type { DiscogsEnrichment, DiscogsCredit } from "./types";
 const DISCOGS_BASE = "https://api.discogs.com";
 const USER_AGENT = "Melomano/1.0.0 (https://github.com/noko32/deglosser)";
 
-interface DiscogsExtraArtist {
+export interface DiscogsExtraArtist {
   name: string;
   role: string;
   anv?: string;
 }
 
-interface DiscogsTrack {
+export interface DiscogsTrack {
   position: string;
   title: string;
   duration?: string;
@@ -36,7 +36,7 @@ function buildHeaders(): HeadersInit {
   return headers;
 }
 
-function matchesPhysicalFormat(formats: string[] | undefined): boolean {
+export function matchesPhysicalFormat(formats: string[] | undefined): boolean {
   if (!formats) return false;
   return formats.some((f) =>
     ["vinyl", "cd", "lp", "cassette"].some((pf) =>
@@ -45,11 +45,11 @@ function matchesPhysicalFormat(formats: string[] | undefined): boolean {
   );
 }
 
-function normalizeTitle(s: string): string {
+export function normalizeTitle(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function findTrackInTracklist(
+export function findTrackInTracklist(
   tracklist: DiscogsTrack[],
   trackTitle: string
 ): DiscogsTrack | null {
@@ -62,7 +62,7 @@ function findTrackInTracklist(
   );
 }
 
-function mapCredits(extraartists: DiscogsExtraArtist[]): DiscogsCredit[] {
+export function mapCredits(extraartists: DiscogsExtraArtist[]): DiscogsCredit[] {
   return extraartists.map((ea) => ({
     name: ea.anv || ea.name,
     role: ea.role,

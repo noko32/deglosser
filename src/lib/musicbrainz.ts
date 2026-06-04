@@ -66,7 +66,7 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   return res;
 }
 
-function buildSearchQuery(raw: string): string {
+export function buildSearchQuery(raw: string): string {
   // "X by Y" pattern
   const byMatch = raw.match(/^(.+?)\s+by\s+(.+)$/i);
   if (byMatch) {

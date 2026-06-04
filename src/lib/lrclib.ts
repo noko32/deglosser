@@ -8,11 +8,11 @@ export interface LrclibResult {
   albumName: string | null;
 }
 
-function normalize(s: string): string {
+export function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
 }
 
-function isCloseMatch(query: string, candidate: string): boolean {
+export function isCloseMatch(query: string, candidate: string): boolean {
   const q = normalize(query);
   const c = normalize(candidate);
   return q.length > 0 && c.length > 0 && (c.includes(q) || q.includes(c));

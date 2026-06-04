@@ -49,7 +49,27 @@ export default function RootLayout({
         <BackgroundGlow />
         <NavBar />
         {children}
-        <footer className="mt-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
+        <footer className="mt-auto py-6 px-4 sm:px-6 lg:px-8 text-center space-y-3">
+          <p className="text-xs text-dg-text-secondary">
+            Built by{" "}
+            <a
+              href="https://pabloarmenta.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-dg-accent-blue hover:underline"
+            >
+              Pablo Armenta
+            </a>
+            {" · "}
+            <a
+              href="https://github.com/noko32"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-dg-accent-blue hover:underline"
+            >
+              GitHub
+            </a>
+          </p>
           <p className="text-[11px] text-dg-text-muted max-w-2xl mx-auto leading-relaxed">
             This application uses Discogs&apos; API but is not affiliated with,
             sponsored or endorsed by Discogs. &quot;Discogs&quot; is a trademark

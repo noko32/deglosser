@@ -2,18 +2,18 @@ import { RecentSearches } from "@/components/RecentSearches";
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
+    <main className="flex flex-1 flex-col items-center justify-center gap-8 p-4 sm:p-6 lg:p-8">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-dg-text">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight bg-clip-text text-transparent hero-title">
           Melomano
         </h1>
-        <p className="mt-3 text-lg text-dg-text-secondary">
+        <p className="mt-3 text-base sm:text-lg text-dg-text-secondary">
           Search any song. Get lyrics, BPM, key, credits, and more.
         </p>
       </div>
 
-      <form action="/search" className="w-full max-w-md">
-        <div className="flex gap-2">
+      <form action="/search" className="w-full max-w-md lg:max-w-lg">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             name="q"
@@ -23,7 +23,7 @@ export default function Home() {
           />
           <button
             type="submit"
-            className="btn-primary rounded-lg px-6 py-3 font-medium text-white"
+            className="btn-hero rounded-lg px-6 py-3 font-medium text-white"
           >
             Search
           </button>

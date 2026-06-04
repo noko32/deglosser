@@ -39,7 +39,7 @@ export function LyricsPanel({ lyrics }: { lyrics: string | null }) {
       <h2 className="text-sm font-medium text-dg-accent-violet uppercase tracking-wide mb-3">
         Lyrics
       </h2>
-      <div className="max-h-[500px] overflow-y-auto text-sm text-dg-text-secondary leading-relaxed">
+      <div className="text-sm text-dg-text-secondary leading-relaxed">
         {verses.map((verse, i) => (
           <p key={i} className="mb-4 last:mb-0">
             {verse.map((line, j) => (

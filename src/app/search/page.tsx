@@ -1,6 +1,7 @@
 import { searchRecordings } from "@/lib/musicbrainz";
 import Link from "next/link";
 import { SearchRecorder } from "@/components/SearchRecorder";
+import { SearchResultThumb } from "@/components/SearchResultThumb";
 
 const PER_PAGE = 20;
 
@@ -20,7 +21,7 @@ export default async function SearchPage({
 
   if (!q) {
     return (
-      <main className="flex flex-1 items-center justify-center p-8">
+      <main className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:p-8">
         <p className="text-dg-text-muted">Enter a search query to find songs.</p>
       </main>
     );
@@ -34,7 +35,7 @@ export default async function SearchPage({
     results = await searchRecordings(q, PER_PAGE, offset);
   } catch {
     return (
-      <main className="mx-auto max-w-3xl p-8">
+      <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
         <p className="text-red-400">
           Search failed — MusicBrainz may be rate-limiting or temporarily
           unavailable. Please wait a moment and try again.
@@ -52,7 +53,7 @@ export default async function SearchPage({
   const totalPages = Math.ceil(results.count / PER_PAGE);
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
       <h1 className="text-2xl font-bold text-dg-text">
         Results for &ldquo;{q}&rdquo;
       </h1>
@@ -66,7 +67,7 @@ export default async function SearchPage({
       {results.recordings.length === 0 ? (
         <p className="mt-8 text-dg-text-muted">No results found.</p>
       ) : (
-        <ul className="mt-6 divide-y divide-dg-border">
+        <ul className="mt-6 space-y-3">
           {results.recordings.map((recording) => {
             const artist =
               recording.artistCredit.map((ac) => ac.name).join(", ") ||
@@ -80,21 +81,21 @@ export default async function SearchPage({
               <li key={recording.id}>
                 <Link
                   href={`/song/${recording.id}?artist=${encodeURIComponent(artist)}&title=${encodeURIComponent(recording.title)}`}
-                  className="block rounded-lg py-4 px-3 -mx-3 transition-colors hover:bg-dg-surface"
+                  className="panel flex items-center gap-4 p-3 transition-all hover:border-dg-accent-blue/30 hover:shadow-[0_0_12px_oklch(from_var(--dg-accent-blue)_l_c_h_/_0.15)]"
+                  style={{ display: "flex" }}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-dg-text">
-                        {recording.title}
-                      </p>
-                      <p className="truncate text-sm text-dg-text-secondary">
-                        {artist}
-                        {album ? ` \u00b7 ${album.title}` : ""}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-sm font-mono text-dg-text-muted">
-                      {formatDuration(recording.length)}
-                    </div>
+                  <SearchResultThumb releaseMbid={album?.id ?? null} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-dg-text">
+                      {recording.title}
+                    </p>
+                    <p className="truncate text-sm text-dg-text-secondary">
+                      {artist}
+                      {album ? ` · ${album.title}` : ""}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-sm font-mono text-dg-text-muted">
+                    {formatDuration(recording.length)}
                   </div>
                 </Link>
               </li>

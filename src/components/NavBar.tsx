@@ -8,7 +8,7 @@ export function NavBar() {
   const isHome = pathname === "/";
 
   return (
-    <nav className="glass-nav sticky top-0 z-50 flex items-center justify-between gap-4 px-6 py-3">
+    <nav className="glass-nav sticky top-0 z-50 flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 w-full">
       <Link
         href="/"
         className="shrink-0 text-lg font-bold tracking-tight text-dg-text"
@@ -18,19 +18,30 @@ export function NavBar() {
 
       {!isHome && (
         <form action="/search" className="flex-1 max-w-md">
-          <input
-            type="text"
-            name="q"
-            placeholder="Search songs..."
-            required
-            className="w-full rounded-lg border border-dg-border bg-dg-surface px-3 py-1.5 text-sm text-dg-text placeholder-dg-text-muted focus:border-dg-accent-blue focus:outline-none focus:ring-2 focus:ring-dg-accent-blue/25"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              name="q"
+              placeholder="Search songs..."
+              required
+              className="w-full rounded-lg border border-dg-border bg-dg-surface pl-3 pr-9 py-1.5 text-sm text-dg-text placeholder-dg-text-muted focus:border-dg-accent-blue focus:outline-none focus:ring-2 focus:ring-dg-accent-blue/25"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-dg-text-muted hover:text-dg-accent-blue transition-colors"
+              aria-label="Search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
         </form>
       )}
 
       <Link
         href="/favorites"
-        className="shrink-0 text-dg-text-muted hover:text-dg-accent-blue transition-colors"
+        className="shrink-0 ml-auto text-dg-text-muted hover:text-dg-accent-blue transition-colors"
         aria-label="Favorites"
       >
         <svg

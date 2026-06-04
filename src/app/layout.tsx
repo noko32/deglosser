@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
+import { BackgroundGlow } from "@/components/BackgroundGlow";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +14,11 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "Melomano — Song Info Aggregator",
@@ -40,9 +46,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <BackgroundGlow />
         <NavBar />
         {children}
-        <footer className="mt-auto py-6 px-8 text-center">
+        <footer className="mt-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-[11px] text-dg-text-muted max-w-2xl mx-auto leading-relaxed">
             This application uses Discogs&apos; API but is not affiliated with,
             sponsored or endorsed by Discogs. &quot;Discogs&quot; is a trademark

@@ -10,7 +10,7 @@ function Badge({
   subtitle?: string;
 }) {
   return (
-    <div className="panel px-3 py-2 text-center min-w-[80px]">
+    <div className="panel px-3 py-2 text-center min-w-[60px] sm:min-w-[80px]">
       <p className="text-xs text-dg-text-muted uppercase tracking-wide">
         {label}
       </p>
@@ -31,7 +31,7 @@ function BarBadge({
 }) {
   const pct = Math.round(value * 100);
   return (
-    <div className="panel px-3 py-2 min-w-[100px]">
+    <div className="panel px-3 py-2 min-w-[70px] sm:min-w-[100px]">
       <p className="text-xs text-dg-text-muted uppercase tracking-wide">
         {label}
       </p>

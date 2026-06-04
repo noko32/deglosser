@@ -25,12 +25,10 @@ function CreditGroup({
       <h3 className="text-xs font-medium text-dg-text-muted uppercase tracking-wide mb-2">
         {title}
       </h3>
-      <dl className="space-y-1.5">
+      <dl className="space-y-2">
         {Array.from(grouped.entries()).map(([role, names]) => (
-          <div key={role} className="flex gap-2 text-sm">
-            <dt className="text-dg-text-muted shrink-0 w-[140px] truncate">
-              {role}
-            </dt>
+          <div key={role} className="text-sm">
+            <dt className="text-dg-text-muted text-xs">{role}</dt>
             <dd className="text-dg-text-secondary">{names.join(", ")}</dd>
           </div>
         ))}
@@ -87,7 +85,7 @@ export function CreditsBlock({
       </div>
 
       {(discogs?.genres?.length ?? 0) > 0 && (
-        <div className="mt-4 pt-3 border-t border-dg-border">
+        <div className="mt-4 pt-3 border-t border-dg-border-glass">
           <div className="flex flex-wrap gap-1.5">
             {discogs!.genres.map((g) => (
               <span

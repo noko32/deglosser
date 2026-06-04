@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function FavoritesPage() {
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
       <Link href="/" className="text-sm text-dg-accent-blue hover:underline">
         &larr; Back to search
       </Link>

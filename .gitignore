@@ -55,3 +55,11 @@ next-env.d.ts
 # personal planning & IDE agent rules (not part of the app)
 /plan/
 /.cursor/
+
+# Python / Django
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+.pytest_cache/
+

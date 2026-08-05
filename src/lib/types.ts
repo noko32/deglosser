@@ -15,6 +15,7 @@ export interface AudioFeaturesResult {
   mood: string | null;
   genre: string | null;
   raw: Record<string, unknown>;
+  status?: "success" | "queued";
 }
 
 export interface AudioFeaturesProvider {
@@ -41,12 +42,19 @@ export interface DiscogsCredit {
   anv?: string;
 }
 
+export interface DiscogsVideo {
+  title: string;
+  uri: string;
+  duration: number;
+}
+
 export interface DiscogsEnrichment {
   releaseCredits: DiscogsCredit[];
   trackCredits: DiscogsCredit[];
   genres: string[];
   styles: string[];
   labels: string[];
+  videos?: DiscogsVideo[];
 }
 
 export interface SongData {
@@ -112,3 +120,16 @@ export interface MBRecordingDetail {
   releases: MBRelease[];
   relations: MBRelation[];
 }
+
+export interface ITunesMapping {
+  itunesTrackId: string;
+  mbid: string;
+  title: string;
+  artist: string;
+  albumTitle?: string | null;
+  coverArtUrl: string | null;
+  durationMs: number | null;
+  previewUrl: string | null;
+  createdAt?: Date;
+}
+

@@ -15,7 +15,7 @@ import {
   extractSamples,
 } from "@/lib/musicbrainz";
 import { getLyrics } from "@/lib/lrclib";
-import { getCoverArt } from "@/lib/cover-art";
+import { getCoverArt, getAlternativeCoverArt } from "@/lib/cover-art";
 import { createProvider } from "@/lib/audio-features";
 import { getDiscogsCredits } from "@/lib/discogs";
 import { getCachedSong, cacheSong } from "@/lib/cache";
@@ -26,6 +26,8 @@ import { CreditsBlock } from "@/components/CreditsBlock";
 import { SamplesBlock } from "@/components/SamplesBlock";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
+import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { HarmonicArchipelago } from "@/components/HarmonicArchipelago";
 
 // --- Skeleton fallback components ---
 
@@ -98,11 +100,25 @@ async function SongHeaderStreamed({
 
 async function AudioFeaturesStreamed({
   dataPromise,
+  mbid,
+  artist,
+  title,
 }: {
   dataPromise: Promise<AudioFeaturesResult | null>;
+  mbid: string;
+  artist: string;
+  title: string;
 }) {
   const features = await dataPromise;
-  return <AudioFeatures features={features} />;
+  return (
+    <AudioFeatures
+      key={mbid}
+      features={features}
+      mbid={mbid}
+      artist={artist}
+      title={title}
+    />
+  );
 }
 
 async function LyricsPanelStreamed({
@@ -135,6 +151,53 @@ async function SamplesBlockStreamed({
 }) {
   const samples = await dataPromise;
   return <SamplesBlock samples={samples} />;
+}
+
+async function HarmonicArchipelagoStreamed({
+  featuresPromise,
+  mbid,
+  title,
+  artist,
+  coverArtPromise,
+}: {
+  featuresPromise: Promise<AudioFeaturesResult | null>;
+  mbid: string;
+  title: string;
+  artist: string;
+  coverArtPromise: Promise<string | null>;
+}) {
+  const [features, coverArtUrl] = await Promise.all([
+    featuresPromise,
+    coverArtPromise,
+  ]);
+
+  if (!features || !features.bpm || (!features.camelot && !features.key)) {
+    return null;
+  }
+
+  return (
+    <HarmonicArchipelago
+      initialSong={{
+        mbid,
+        title,
+        artist,
+        bpm: Math.round(features.bpm),
+        musicalKey: features.camelot || features.key,
+        coverArtUrl,
+      }}
+    />
+  );
+}
+
+async function YouTubePlayerStreamed({
+  discogsPromise,
+  queryFallback,
+}: {
+  discogsPromise: Promise<DiscogsEnrichment | null>;
+  queryFallback: string;
+}) {
+  const result = await discogsPromise;
+  return <YouTubePlayer videos={result?.videos ?? []} queryFallback={queryFallback} />;
 }
 
 // --- Cache writer (fire-and-forget, collects all promise results) ---
@@ -191,13 +254,19 @@ export default async function SongPage({
   searchParams,
 }: {
   params: Promise<{ mbid: string }>;
-  searchParams: Promise<{ artist?: string; title?: string }>;
+  searchParams: Promise<{ artist?: string; title?: string; cover?: string; album?: string }>;
 }) {
   const [{ mbid }, qp] = await Promise.all([params, searchParams]);
 
   // Fast path: cache hit renders everything synchronously
   const cached = await getCachedSong(mbid);
   if (cached) {
+    // Prefer the iTunes cover from search navigation — it's reliable and matches what the user clicked.
+    const itunesCover = qp.cover
+      ? qp.cover.replace("/100x100bb.jpg", "/600x600bb.jpg")
+      : null;
+    const coverArtUrl = itunesCover || cached.coverArtUrl;
+    
     return (
       <main className="mx-auto max-w-3xl lg:max-w-5xl p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between">
@@ -214,7 +283,7 @@ export default async function SongPage({
                 mbid,
                 title: cached.title,
                 artist: cached.artist,
-                coverArtUrl: cached.coverArtUrl,
+                coverArtUrl: coverArtUrl,
               }}
             />
           </div>
@@ -223,15 +292,40 @@ export default async function SongPage({
           <SongHeader
             title={cached.title}
             artist={cached.artist}
-            albumTitle={cached.albumTitle}
+            albumTitle={qp.album || cached.albumTitle}
             releaseDate={cached.releaseDate}
             durationMs={cached.durationMs}
-            coverArtUrl={cached.coverArtUrl}
+            coverArtUrl={coverArtUrl}
+            musicalKey={cached.musicalKey || cached.audioFeatures?.camelot || cached.audioFeatures?.key}
+            bpm={cached.bpm || (cached.audioFeatures?.bpm ? Math.round(cached.audioFeatures.bpm) : null)}
+            mood={cached.audioFeatures?.mood}
           />
-          <AudioFeatures features={cached.audioFeatures} />
+          <AudioFeatures
+            key={mbid}
+            features={cached.audioFeatures}
+            mbid={mbid}
+            artist={cached.artist}
+            title={cached.title}
+          />
+          {((cached.bpm || cached.audioFeatures?.bpm) && (cached.musicalKey || cached.audioFeatures?.camelot || cached.audioFeatures?.key)) && (
+            <HarmonicArchipelago
+              initialSong={{
+                mbid,
+                title: cached.title,
+                artist: cached.artist,
+                bpm: cached.bpm || Math.round(cached.audioFeatures!.bpm!),
+                musicalKey: cached.musicalKey || cached.audioFeatures?.camelot || cached.audioFeatures!.key!,
+                coverArtUrl: coverArtUrl,
+              }}
+            />
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <LyricsPanel lyrics={cached.lyrics} />
             <div className="space-y-6">
+              <YouTubePlayer
+                videos={cached.discogsEnrichment?.videos}
+                queryFallback={`${cached.artist} - ${cached.title}`}
+              />
               <CreditsBlock
                 credits={cached.credits}
                 discogs={cached.discogsEnrichment}
@@ -263,24 +357,30 @@ export default async function SongPage({
     recording["artist-credit"]?.map((ac) => ac.name).join(", ") ??
     "Unknown Artist";
   const title = recording.title;
-  const bestRelease = selectBestRelease(recording.releases ?? []);
-  const albumTitle = bestRelease?.title ?? null;
+  const bestRelease = selectBestRelease(recording.releases ?? [], qp.album);
+  const albumTitle = qp.album || bestRelease?.title || null;
   const albumMbid = bestRelease?.id ?? null;
   const releaseDate = bestRelease?.date ?? null;
   const durationMs = recording.length ?? null;
   const credits = extractCredits(recording.relations ?? []);
   const sampleRelationships = extractSamples(recording.relations ?? []);
 
-  // Tier 2: fire all parallel promises WITHOUT awaiting
-  const coverArtPromise = albumMbid
-    ? getCoverArt(albumMbid)
-    : Promise.resolve(null);
+  // Prefer iTunes cover from search click; CAA/alternatives fill gaps.
+  const itunesCover = qp.cover
+    ? qp.cover.replace("/100x100bb.jpg", "/600x600bb.jpg")
+    : null;
+  const coverArtPromise = itunesCover
+    ? Promise.resolve(itunesCover)
+    : albumMbid
+      ? getCoverArt(albumMbid).then(
+          (caaUrl) => caaUrl || getAlternativeCoverArt(artist, title, albumTitle)
+        )
+      : getAlternativeCoverArt(artist, title, albumTitle);
+
   const lyricsPromise = getLyrics(artist, title);
   const audioFeaturesPromise =
     earlyAudioFeaturesPromise ?? provider.getFeatures({ mbid, artist, title });
-  const discogsPromise = albumTitle
-    ? getDiscogsCredits(artist, albumTitle, title)
-    : Promise.resolve(null);
+  const discogsPromise = getDiscogsCredits(artist, albumTitle, title);
 
   // Header data: MB text fields + cover art (resolves when CAA responds)
   const headerDataPromise = coverArtPromise.then((coverArtUrl) => ({
@@ -340,7 +440,22 @@ export default async function SongPage({
         </Suspense>
 
         <Suspense fallback={<AudioFeaturesSkeleton />}>
-          <AudioFeaturesStreamed dataPromise={audioFeaturesPromise} />
+          <AudioFeaturesStreamed
+            dataPromise={audioFeaturesPromise}
+            mbid={mbid}
+            artist={artist}
+            title={title}
+          />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <HarmonicArchipelagoStreamed
+            featuresPromise={audioFeaturesPromise}
+            mbid={mbid}
+            title={title}
+            artist={artist}
+            coverArtPromise={coverArtPromise}
+          />
         </Suspense>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -349,6 +464,13 @@ export default async function SongPage({
           </Suspense>
 
           <div className="space-y-6">
+            <Suspense fallback={<PanelSkeleton title="Listen / Stream Player" lines={6} />}>
+              <YouTubePlayerStreamed
+                discogsPromise={discogsPromise}
+                queryFallback={`${artist} - ${title}`}
+              />
+            </Suspense>
+
             <Suspense fallback={<PanelSkeleton title="Credits" lines={6} />}>
               <CreditsBlockStreamed
                 creditsPromise={Promise.resolve(credits)}

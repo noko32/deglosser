@@ -58,3 +58,16 @@ export const searchHistory = pgTable("search_history", {
   query: text("query").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const itunesMappings = pgTable("itunes_mappings", {
+  itunesTrackId: text("itunes_track_id").primaryKey(),
+  mbid: text("mbid").notNull(),
+  title: text("title").notNull(),
+  artist: text("artist").notNull(),
+  albumTitle: text("album_title"),
+  coverArtUrl: text("cover_art_url"),
+  durationMs: integer("duration_ms"),
+  previewUrl: text("preview_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+

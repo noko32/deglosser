@@ -67,6 +67,16 @@ async function rateLimitedFetch(url: string): Promise<Response> {
 }
 
 export function buildSearchQuery(raw: string): string {
+  // If the query is already a structured Lucene query, return it as-is
+  if (
+    raw.includes("recording:") ||
+    raw.includes("artist:") ||
+    raw.includes("release:") ||
+    raw.includes("release-group:")
+  ) {
+    return raw;
+  }
+
   // "X by Y" pattern
   const byMatch = raw.match(/^(.+?)\s+by\s+(.+)$/i);
   if (byMatch) {
@@ -140,35 +150,62 @@ export async function getRecordingWithRels(
   return res.json();
 }
 
+function normalizeLoose(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+}
+
 /**
- * Pick the best release: prefer Album (non-compilation), then earliest date.
+ * Pick the best release: prefer a matching studio album title when provided,
+ * then Album (non-compilation / non-DJ-mix), then earliest date.
  */
 export function selectBestRelease(
-  releases: MBRelease[]
+  releases: MBRelease[],
+  preferredAlbumTitle?: string | null
 ): MBRelease | null {
   if (releases.length === 0) return null;
 
-  const albums = releases.filter((r) => {
+  const preferredNorm = preferredAlbumTitle
+    ? normalizeLoose(preferredAlbumTitle)
+    : null;
+
+  const scored = releases.map((r) => {
     const rg = r["release-group"];
-    if (!rg) return false;
-    const primary = rg["primary-type"];
-    const secondary = rg["secondary-types"] ?? [];
-    return (
-      primary === "Album" &&
-      !secondary.includes("Compilation") &&
-      !secondary.includes("DJ-mix")
-    );
+    const primary = rg?.["primary-type"] ?? null;
+    const secondary = rg?.["secondary-types"] ?? [];
+    const title = r.title ?? "";
+    const titleNorm = normalizeLoose(title);
+    let score = 0;
+
+    if (preferredNorm) {
+      if (titleNorm === preferredNorm) score += 100;
+      else if (titleNorm.includes(preferredNorm) || preferredNorm.includes(titleNorm)) {
+        score += 60;
+      }
+    }
+
+    if (primary === "Album") score += 30;
+    else if (primary === "Single") score += 10;
+    else if (primary === "EP") score += 15;
+
+    if (secondary.includes("Compilation")) score -= 40;
+    if (secondary.includes("DJ-mix")) score -= 80;
+    if (secondary.includes("Live")) score -= 50;
+    if (secondary.includes("Remix")) score -= 50;
+
+    // Demote obvious non-studio packaging even when secondary-types are missing
+    if (/boiler room|partygirl|dj mix|live at|karaoke|tribute|workout/i.test(title)) {
+      score -= 90;
+    }
+
+    return { release: r, score, date: r.date ?? "9999" };
   });
 
-  const candidates = albums.length > 0 ? albums : releases;
-
-  candidates.sort((a, b) => {
-    const dateA = a.date ?? "9999";
-    const dateB = b.date ?? "9999";
-    return dateA.localeCompare(dateB);
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.date.localeCompare(b.date);
   });
 
-  return candidates[0];
+  return scored[0]?.release ?? null;
 }
 
 /**

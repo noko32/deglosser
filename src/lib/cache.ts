@@ -1,4 +1,4 @@
-import type { SongData } from "./types";
+import type { SongData, ITunesMapping } from "./types";
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -114,5 +114,100 @@ export async function cacheSong(data: SongData): Promise<void> {
       });
   } catch {
     // Cache write failure is non-fatal
+  }
+}
+
+export async function getItunesMapping(
+  itunesTrackId: string
+): Promise<ITunesMapping | null> {
+  const map = await batchGetItunesMappings([itunesTrackId]);
+  return map.get(itunesTrackId) ?? null;
+}
+
+export async function batchGetItunesMappings(
+  itunesTrackIds: string[]
+): Promise<Map<string, ITunesMapping>> {
+  const result = new Map<string, ITunesMapping>();
+  if (!dbAvailable() || itunesTrackIds.length === 0) return result;
+
+  try {
+    const { getDb } = await import("@/db");
+    const { itunesMappings } = await import("@/db/schema");
+    const { inArray } = await import("drizzle-orm");
+
+    const rows = await getDb()
+      .select()
+      .from(itunesMappings)
+      .where(inArray(itunesMappings.itunesTrackId, itunesTrackIds));
+
+    for (const row of rows) {
+      result.set(row.itunesTrackId, {
+        itunesTrackId: row.itunesTrackId,
+        mbid: row.mbid,
+        title: row.title,
+        artist: row.artist,
+        albumTitle: row.albumTitle ?? null,
+        coverArtUrl: row.coverArtUrl,
+        durationMs: row.durationMs,
+        previewUrl: row.previewUrl,
+        createdAt: row.createdAt,
+      });
+    }
+  } catch {
+    // Non-fatal
+  }
+
+  return result;
+}
+
+export async function cacheItunesMapping(data: ITunesMapping): Promise<void> {
+  if (!dbAvailable()) return;
+
+  try {
+    const { getDb } = await import("@/db");
+    const { itunesMappings } = await import("@/db/schema");
+
+    await getDb()
+      .insert(itunesMappings)
+      .values({
+        itunesTrackId: data.itunesTrackId,
+        mbid: data.mbid,
+        title: data.title,
+        artist: data.artist,
+        albumTitle: data.albumTitle ?? null,
+        coverArtUrl: data.coverArtUrl,
+        durationMs: data.durationMs,
+        previewUrl: data.previewUrl,
+      })
+      .onConflictDoUpdate({
+        target: itunesMappings.itunesTrackId,
+        set: {
+          mbid: data.mbid,
+          title: data.title,
+          artist: data.artist,
+          albumTitle: data.albumTitle ?? null,
+          coverArtUrl: data.coverArtUrl,
+          durationMs: data.durationMs,
+          previewUrl: data.previewUrl,
+        },
+      });
+  } catch {
+    // Cache write failure is non-fatal
+  }
+}
+
+export async function deleteItunesMapping(itunesTrackId: string): Promise<void> {
+  if (!dbAvailable()) return;
+
+  try {
+    const { getDb } = await import("@/db");
+    const { itunesMappings } = await import("@/db/schema");
+    const { eq } = await import("drizzle-orm");
+
+    await getDb()
+      .delete(itunesMappings)
+      .where(eq(itunesMappings.itunesTrackId, itunesTrackId));
+  } catch {
+    // Non-fatal
   }
 }

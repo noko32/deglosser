@@ -14,14 +14,27 @@ describe("freqBlogProvider.getFeatures", () => {
     expect(await freqBlogProvider.getFeatures(INPUT)).toBeNull();
   });
 
-  it("returns null on 202 (queued for analysis)", async () => {
+  it("returns queued status object on 202 (queued for analysis)", async () => {
     vi.stubEnv("FREQBLOG_API_KEY", "test-key");
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 202 })
     );
 
-    expect(await freqBlogProvider.getFeatures(INPUT)).toBeNull();
+    const result = await freqBlogProvider.getFeatures(INPUT);
+    expect(result).toEqual({
+      bpm: null,
+      bpmAlt: null,
+      key: null,
+      camelot: null,
+      energy: null,
+      danceability: null,
+      valence: null,
+      mood: null,
+      genre: null,
+      raw: {},
+      status: "queued"
+    });
   });
 
   it("maps response fields correctly on success", async () => {

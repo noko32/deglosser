@@ -7,6 +7,9 @@ interface SongHeaderProps {
   releaseDate: string | null;
   durationMs: number | null;
   coverArtUrl: string | null;
+  musicalKey?: string | null;
+  bpm?: number | null;
+  mood?: string | null;
 }
 
 function formatDuration(ms: number): string {
@@ -22,10 +25,21 @@ export function SongHeader({
   releaseDate,
   durationMs,
   coverArtUrl,
+  musicalKey = null,
+  bpm = null,
+  mood = null,
 }: SongHeaderProps) {
   return (
     <div className="panel p-5 flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-      <CoverArt src={coverArtUrl} alt={`${albumTitle ?? title} cover art`} />
+      <CoverArt
+        src={coverArtUrl}
+        alt={`${albumTitle ?? title} cover art`}
+        title={title}
+        artist={artist}
+        musicalKey={musicalKey}
+        bpm={bpm}
+        mood={mood}
+      />
 
       <div className="min-w-0 pt-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-dg-text break-words">

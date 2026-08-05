@@ -16,6 +16,12 @@ export interface DiscogsTrack {
   extraartists?: DiscogsExtraArtist[];
 }
 
+interface DiscogsReleaseVideo {
+  title: string;
+  uri: string;
+  duration?: number;
+}
+
 interface DiscogsSearchResult {
   id: number;
   title: string;
@@ -70,72 +76,159 @@ export function mapCredits(extraartists: DiscogsExtraArtist[]): DiscogsCredit[] 
   }));
 }
 
+/**
+ * Secondary fallback to search for specific song/single releases directly on Discogs.
+ * Essential when album-level searches fail to return video coordinates.
+ */
+async function getDiscogsTrackVideos(
+  artist: string,
+  trackTitle: string
+): Promise<{ title: string; uri: string; duration: number }[]> {
+  try {
+    const searchParams = new URLSearchParams({
+      q: `${artist} - ${trackTitle}`,
+      type: "release",
+      per_page: "8",
+    });
+    const res = await fetch(
+      `${DISCOGS_BASE}/database/search?${searchParams}`,
+      { headers: buildHeaders() }
+    );
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const results = data.results ?? [];
+    if (results.length === 0) return [];
+
+    const trackIsRemix = /\bremix\b|\bmix\b/i.test(trackTitle);
+    const trackNorm = normalizeTitle(trackTitle);
+    const ranked = [...results].sort((a, b) => {
+      const scoreRelease = (r: DiscogsSearchResult) => {
+        const t = `${r.title || ""}`.toLowerCase();
+        const tNorm = normalizeTitle(r.title || "");
+        let s = r.community?.have ?? 0;
+        if (!trackIsRemix && /remix|a\.?\s*g\.?\s*cook|addison/i.test(t)) s -= 1000;
+        if (trackNorm && tNorm.includes(trackNorm)) s += 80;
+        return s;
+      };
+      return scoreRelease(b) - scoreRelease(a);
+    });
+
+    // Check top ranked releases for video attachments
+    for (let i = 0; i < Math.min(ranked.length, 4); i++) {
+      const releaseId = ranked[i].id;
+      const releaseRes = await fetch(
+        `${DISCOGS_BASE}/releases/${releaseId}`,
+        { headers: buildHeaders() }
+      );
+      if (releaseRes.ok) {
+        const release = await releaseRes.json();
+        const videos = (release.videos ?? []) as DiscogsReleaseVideo[];
+        if (videos.length > 0) {
+          return videos.map((v) => ({
+            title: v.title,
+            uri: v.uri,
+            duration: v.duration || 0,
+          }));
+        }
+      }
+    }
+  } catch {
+    // Ignore and fallback
+  }
+  return [];
+}
+
 export async function getDiscogsCredits(
   artist: string,
-  albumTitle: string,
+  albumTitle: string | null,
   trackTitle: string
 ): Promise<DiscogsEnrichment | null> {
   const token = process.env.DISCOGS_TOKEN;
   if (!token) return null;
 
   try {
-    // Search for the album (not the song — physical releases have credits)
-    const searchParams = new URLSearchParams({
-      q: albumTitle,
-      type: "release",
-      artist,
-      per_page: "15",
-    });
-    const searchRes = await fetch(
-      `${DISCOGS_BASE}/database/search?${searchParams}`,
-      { headers: buildHeaders() }
-    );
-    if (!searchRes.ok) return null;
+    let releaseCredits: DiscogsCredit[] = [];
+    let trackCredits: DiscogsCredit[] = [];
+    let genres: string[] = [];
+    let styles: string[] = [];
+    let labels: string[] = [];
+    let videos: { title: string; uri: string; duration: number }[] = [];
 
-    const searchData = await searchRes.json();
-    const results: DiscogsSearchResult[] = searchData.results ?? [];
+    // 1. Primary search: Look up the album release physical details if available
+    if (albumTitle) {
+      const searchParams = new URLSearchParams({
+        q: albumTitle,
+        type: "release",
+        artist,
+        per_page: "15",
+      });
+      const searchRes = await fetch(
+        `${DISCOGS_BASE}/database/search?${searchParams}`,
+        { headers: buildHeaders() }
+      );
 
-    // Pick best physical release: filter to Vinyl/CD, prefer highest community.have
-    const physicalReleases = results.filter((r) =>
-      matchesPhysicalFormat(r.format)
-    );
-    const candidates =
-      physicalReleases.length > 0 ? physicalReleases : results;
-    if (candidates.length === 0) return null;
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        const results: DiscogsSearchResult[] = searchData.results ?? [];
 
-    candidates.sort(
-      (a, b) => (b.community?.have ?? 0) - (a.community?.have ?? 0)
-    );
-    const bestRelease = candidates[0];
+        const physicalReleases = results.filter((r) =>
+          matchesPhysicalFormat(r.format)
+        );
+        const candidates = physicalReleases.length > 0 ? physicalReleases : results;
 
-    // Fetch full release
-    const releaseRes = await fetch(
-      `${DISCOGS_BASE}/releases/${bestRelease.id}`,
-      { headers: buildHeaders() }
-    );
-    if (!releaseRes.ok) return null;
+        if (candidates.length > 0) {
+          candidates.sort(
+            (a, b) => (b.community?.have ?? 0) - (a.community?.have ?? 0)
+          );
+          const bestRelease = candidates[0];
 
-    const release = await releaseRes.json();
+          const releaseRes = await fetch(
+            `${DISCOGS_BASE}/releases/${bestRelease.id}`,
+            { headers: buildHeaders() }
+          );
 
-    const releaseCredits = mapCredits(release.extraartists ?? []);
+          if (releaseRes.ok) {
+            const release = await releaseRes.json();
+            releaseCredits = mapCredits(release.extraartists ?? []);
+            genres = release.genres ?? [];
+            styles = release.styles ?? [];
+            labels = (release.labels ?? []).map((l: { name: string }) => l.name);
+            videos = (release.videos ?? []).map(
+              (v: { title: string; uri: string; duration: number }) => ({
+                title: v.title,
+                uri: v.uri,
+                duration: v.duration,
+              })
+            );
 
-    // Find matching track and extract per-track credits
-    const matchedTrack = findTrackInTracklist(
-      release.tracklist ?? [],
-      trackTitle
-    );
-    const trackCredits = matchedTrack
-      ? mapCredits(matchedTrack.extraartists ?? [])
-      : [];
+            const matchedTrack = findTrackInTracklist(
+              release.tracklist ?? [],
+              trackTitle
+            );
+            if (matchedTrack) {
+              trackCredits = mapCredits(matchedTrack.extraartists ?? []);
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Secondary fallback: If no videos were found on the physical album, run direct track search
+    if (videos.length === 0) {
+      const fallbackVideos = await getDiscogsTrackVideos(artist, trackTitle);
+      if (fallbackVideos.length > 0) {
+        videos = fallbackVideos;
+      }
+    }
 
     return {
       releaseCredits,
       trackCredits,
-      genres: release.genres ?? [],
-      styles: release.styles ?? [],
-      labels: (release.labels ?? []).map(
-        (l: { name: string }) => l.name
-      ),
+      genres,
+      styles,
+      labels,
+      videos,
     };
   } catch {
     return null;

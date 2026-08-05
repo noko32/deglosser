@@ -3,6 +3,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { BackgroundGlow } from "@/components/BackgroundGlow";
+import { PlayerProvider } from "@/context/PlayerContext";
+import { FooterPlayer } from "@/components/FooterPlayer";
+import { GlobalYouTubeDrawer } from "@/components/GlobalYouTubeDrawer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,39 +48,43 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
-        <BackgroundGlow />
-        <NavBar />
-        {children}
-        <footer className="mt-auto py-6 px-4 sm:px-6 lg:px-8 text-center space-y-3">
-          <p className="text-xs text-dg-text-secondary">
-            Built by{" "}
-            <a
-              href="https://pabloarmenta.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-dg-accent-blue hover:underline"
-            >
-              Pablo Armenta
-            </a>
-            {" · "}
-            <a
-              href="https://github.com/noko32"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-dg-accent-blue hover:underline"
-            >
-              GitHub
-            </a>
-          </p>
-          <p className="text-[11px] text-dg-text-muted max-w-2xl mx-auto leading-relaxed">
-            This application uses Discogs&apos; API but is not affiliated with,
-            sponsored or endorsed by Discogs. &quot;Discogs&quot; is a trademark
-            of Zink Media, LLC. Song metadata provided by MusicBrainz, lyrics
-            by LRCLIB, audio features by FreqBlog, album art by Cover Art
-            Archive.
-          </p>
-        </footer>
+      <body className="min-h-full flex flex-col font-sans mb-20 sm:mb-24">
+        <PlayerProvider>
+          <BackgroundGlow />
+          <NavBar />
+          {children}
+          <FooterPlayer />
+          <GlobalYouTubeDrawer />
+          <footer className="mt-auto py-6 px-4 sm:px-6 lg:px-8 text-center space-y-3 pb-24 sm:pb-28">
+            <p className="text-xs text-dg-text-secondary">
+              Built by{" "}
+              <a
+                href="https://pabloarmenta.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-dg-accent-blue hover:underline"
+              >
+                Pablo Armenta
+              </a>
+              {" · "}
+              <a
+                href="https://github.com/noko32"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-dg-accent-blue hover:underline"
+              >
+                GitHub
+              </a>
+            </p>
+            <p className="text-[11px] text-dg-text-muted max-w-2xl mx-auto leading-relaxed">
+              This application uses Discogs&apos; API but is not affiliated with,
+              sponsored or endorsed by Discogs. &quot;Discogs&quot; is a trademark
+              of Zink Media, LLC. Song metadata provided by MusicBrainz, lyrics
+              by LRCLIB, audio features by FreqBlog, album art by Cover Art
+              Archive.
+            </p>
+          </footer>
+        </PlayerProvider>
       </body>
     </html>
   );

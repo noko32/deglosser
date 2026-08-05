@@ -10,13 +10,27 @@ export const freqBlogProvider: AudioFeaturesProvider = {
     if (!apiKey) return null;
 
     try {
-      const params = new URLSearchParams({ track: title, artist });
+      const params = new URLSearchParams({ track: title, artist, wait: "15" });
       const res = await fetch(`${FREQBLOG_BASE}/lookup?${params}`, {
         headers: { "X-Api-Key": apiKey },
       });
 
       // 202 = queued for analysis, not ready yet
-      if (res.status === 202) return null;
+      if (res.status === 202) {
+        return {
+          bpm: null,
+          bpmAlt: null,
+          key: null,
+          camelot: null,
+          energy: null,
+          danceability: null,
+          valence: null,
+          mood: null,
+          genre: null,
+          raw: {},
+          status: "queued"
+        };
+      }
       if (!res.ok) return null;
 
       const data = await res.json();
@@ -33,6 +47,7 @@ export const freqBlogProvider: AudioFeaturesProvider = {
         mood: af.mood ?? null,
         genre: af.genre ?? null,
         raw: af,
+        status: "success",
       };
 
       return result;

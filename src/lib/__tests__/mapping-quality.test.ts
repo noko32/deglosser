@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   albumsCompatible,
   isSuspiciousReleaseTitle,
+  normalizeMappingKey,
   pickBestRecording,
   scoreMbRecording,
   type ResolutionCandidate,
@@ -68,6 +69,14 @@ describe("pickBestRecording", () => {
 
     expect(result.mbid).toBe("brat-recording");
     expect(result.gap).toBeGreaterThanOrEqual(12);
+  });
+});
+
+describe("normalizeMappingKey accents", () => {
+  it("treats Valentín and Valentin as the same key", () => {
+    expect(normalizeMappingKey("Valentín Elizalde")).toBe(
+      normalizeMappingKey("Valentin Elizalde")
+    );
   });
 });
 

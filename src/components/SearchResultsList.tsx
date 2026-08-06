@@ -60,9 +60,13 @@ export function SearchResultsList({ songs, query }: SearchResultsListProps) {
               song.collectionName ? `&album=${encodedAlbum}` : ""
             }`;
 
+        // API resolve redirects need a full document navigation.
+        // <Link> prefetches as RSC (?_rsc=…) and drops id/artist/title → 400.
+        const Nav = song.mbid ? Link : "a";
+
         return (
           <li key={song.trackId}>
-            <Link
+            <Nav
               href={href}
               className="panel flex items-center gap-4 p-3 transition-all hover:border-dg-accent-blue/30 hover:shadow-[0_0_12px_oklch(from_var(--dg-accent-blue)_l_c_h_/_0.15)] relative"
               style={{ display: "flex" }}
@@ -145,7 +149,7 @@ export function SearchResultsList({ songs, query }: SearchResultsListProps) {
                   {formatDuration(song.trackTimeMillis)}
                 </div>
               </div>
-            </Link>
+            </Nav>
           </li>
         );
       })}

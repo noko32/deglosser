@@ -6,11 +6,22 @@ export const MIN_RESOLUTION_SCORE = 45;
 /** Best candidate must beat the runner-up by at least this much */
 export const MIN_SCORE_GAP = 12;
 
+/**
+ * When iTunes album title ≠ MB best release, allow through if duration
+ * is this close (same-recording evidence for compilation packaging).
+ */
+export const DURATION_ALBUM_BYPASS_MS = 2000;
+
 const BAD_RELEASE_RE =
   /boiler room|partygirl|dj mix|live at|karaoke|tribute|workout|greatest hits|now that's what|spotify/i;
 
 export function normalizeMappingKey(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+  return s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
 }
 
 export function albumsCompatible(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -118,11 +129,19 @@ export async function verifyMbidMatchesContext(
 
     if (album && bestRelease?.title) {
       if (!albumsCompatible(album, bestRelease.title)) {
-        return {
-          ok: false,
-          reason: `release_mismatch:${bestRelease.title}`,
-          bestReleaseTitle: bestRelease.title,
-        };
+        // iTunes compilations often aren't on MB; near-identical duration
+        // is enough same-recording evidence (PARTYGIRL-scale deltas still fail).
+        const durationOk =
+          durationMs != null &&
+          recording.length != null &&
+          Math.abs(recording.length - durationMs) < DURATION_ALBUM_BYPASS_MS;
+        if (!durationOk) {
+          return {
+            ok: false,
+            reason: `release_mismatch:${bestRelease.title}`,
+            bestReleaseTitle: bestRelease.title,
+          };
+        }
       }
     }
 

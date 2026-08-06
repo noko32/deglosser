@@ -151,7 +151,12 @@ export async function getRecordingWithRels(
 }
 
 function normalizeLoose(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+  return s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
 }
 
 /**

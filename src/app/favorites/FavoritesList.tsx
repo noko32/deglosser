@@ -7,6 +7,7 @@ import {
   toggleFavorite,
   type FavoriteSong,
 } from "@/lib/local-storage";
+import { appendFromParam } from "@/lib/contextual-back";
 
 const emptySubscribe = () => () => {};
 
@@ -56,7 +57,7 @@ export function FavoritesList() {
       {favorites.map((song) => (
         <li key={song.mbid} className="flex items-center gap-4 py-4">
           <Link
-            href={`/song/${song.mbid}`}
+            href={appendFromParam(`/song/${song.mbid}`, "/favorites")}
             className="flex items-center gap-4 flex-1 min-w-0 rounded-lg transition-colors hover:bg-dg-surface -m-2 p-2"
           >
             {song.coverArtUrl ? (

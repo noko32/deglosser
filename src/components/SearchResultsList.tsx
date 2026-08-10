@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePlayer } from "@/context/PlayerContext";
+import { appendFromParam } from "@/lib/contextual-back";
 import type { ITunesSong } from "@/lib/itunes";
 
 export type SearchResultSong = ITunesSong & { mbid?: string };
 
 interface SearchResultsListProps {
   songs: SearchResultSong[];
-  query: string;
+  returnTo: string;
 }
 
 function formatDuration(ms: number | null): string {
@@ -19,7 +20,7 @@ function formatDuration(ms: number | null): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function SearchResultsList({ songs, query }: SearchResultsListProps) {
+export function SearchResultsList({ songs, returnTo }: SearchResultsListProps) {
   const { currentTrack, isPlaying: globalIsPlaying, playTrack, pauseTrack } = usePlayer();
 
   const handlePlayPause = (e: React.MouseEvent, song: SearchResultSong) => {
@@ -52,13 +53,14 @@ export function SearchResultsList({ songs, query }: SearchResultsListProps) {
         const encodedPreview = encodeURIComponent(song.previewUrl || "");
         const encodedAlbum = encodeURIComponent(song.collectionName || "");
 
-        const href = song.mbid
+        const baseHref = song.mbid
           ? `/song/${song.mbid}?artist=${encodedArtist}&title=${encodedTitle}&cover=${encodedCover}${
               song.collectionName ? `&album=${encodedAlbum}` : ""
             }`
           : `/api/itunes/resolve?id=${song.trackId}&artist=${encodedArtist}&title=${encodedTitle}&cover=${encodedCover}&duration=${song.trackTimeMillis}&preview=${encodedPreview}${
               song.collectionName ? `&album=${encodedAlbum}` : ""
             }`;
+        const href = appendFromParam(baseHref, returnTo);
 
         // API resolve redirects need a full document navigation.
         // <Link> prefetches as RSC (?_rsc=…) and drops id/artist/title → 400.
@@ -68,6 +70,7 @@ export function SearchResultsList({ songs, query }: SearchResultsListProps) {
           <li key={song.trackId}>
             <Nav
               href={href}
+              prefetch={song.mbid ? false : undefined}
               className="panel flex items-center gap-4 p-3 transition-all hover:border-dg-accent-blue/30 hover:shadow-[0_0_12px_oklch(from_var(--dg-accent-blue)_l_c_h_/_0.15)] relative"
               style={{ display: "flex" }}
             >

@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import type {
   SongData,
   Credit,
@@ -26,6 +25,7 @@ import { CreditsBlock } from "@/components/CreditsBlock";
 import { SamplesBlock } from "@/components/SamplesBlock";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ShareButton } from "@/components/ShareButton";
+import { ContextualBack } from "@/components/ContextualBack";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { HarmonicArchipelago } from "@/components/HarmonicArchipelago";
 
@@ -254,7 +254,13 @@ export default async function SongPage({
   searchParams,
 }: {
   params: Promise<{ mbid: string }>;
-  searchParams: Promise<{ artist?: string; title?: string; cover?: string; album?: string }>;
+  searchParams: Promise<{
+    artist?: string;
+    title?: string;
+    cover?: string;
+    album?: string;
+    from?: string;
+  }>;
 }) {
   const [{ mbid }, qp] = await Promise.all([params, searchParams]);
 
@@ -270,12 +276,7 @@ export default async function SongPage({
     return (
       <main className="mx-auto max-w-3xl lg:max-w-5xl p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-sm text-dg-accent-blue hover:underline"
-          >
-            &larr; Back to search
-          </Link>
+          <ContextualBack from={qp.from} />
           <div className="flex items-center gap-3">
             <ShareButton mbid={mbid} />
             <FavoriteButton
@@ -415,12 +416,7 @@ export default async function SongPage({
   return (
     <main className="mx-auto max-w-3xl lg:max-w-5xl p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="text-sm text-dg-accent-blue hover:underline"
-        >
-          &larr; Back to search
-        </Link>
+        <ContextualBack from={qp.from} />
         <div className="flex items-center gap-3">
           <ShareButton mbid={mbid} />
           <FavoriteButton

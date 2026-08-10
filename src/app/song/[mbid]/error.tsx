@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { ContextualBack } from "@/components/ContextualBack";
 
 export default function SongError({ reset }: { reset: () => void }) {
   return (
@@ -13,9 +13,7 @@ export default function SongError({ reset }: { reset: () => void }) {
         >
           Try again
         </button>
-        <Link href="/" className="text-sm text-dg-accent-blue hover:underline">
-          Back to search
-        </Link>
+        <ContextualBack />
       </div>
     </main>
   );

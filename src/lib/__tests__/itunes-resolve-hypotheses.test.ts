@@ -11,6 +11,7 @@ import {
   verifyMbidMatchesContext,
 } from "@/lib/mapping-quality";
 import type { MBRecordingDetail } from "@/lib/types";
+import { itunesResolveQueryTitle } from "@/lib/itunes";
 
 vi.mock("@/lib/musicbrainz", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/musicbrainz")>();
@@ -152,5 +153,12 @@ describe("H2 — duration bypass for compilation album mismatch", () => {
 
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/release_mismatch|suspicious_release/);
+  });
+});
+
+describe("feat. parentheticals in iTunes titles", () => {
+  it("strips feat. for MB Lucene/scoring (Umbrella / JAŸ-Z)", () => {
+    expect(itunesResolveQueryTitle("Umbrella (feat. JAŸ-Z)")).toBe("Umbrella");
+    expect(itunesResolveQueryTitle("Umbrella (feat. JAY-Z)")).toBe("Umbrella");
   });
 });

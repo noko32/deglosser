@@ -49,6 +49,19 @@ function baseTitle(trackName: string): string {
     .trim();
 }
 
+/** Title used for MusicBrainz Lucene search (parentheticals / feat. stripped). */
+export function itunesResolveQueryTitle(title: string): string {
+  return (
+    baseTitle(title) ||
+    title
+      .replace(
+        /\s*[\(\[](remaster|remastered|deluxe|live|radio edit|single edit|version|edit|remix)[\)\]]/gi,
+        ""
+      )
+      .trim()
+  );
+}
+
 function isDerivativeTrack(song: Pick<ITunesSong, "trackName" | "collectionName" | "artistName">): boolean {
   const text = `${song.trackName} ${song.collectionName ?? ""}`;
   if (DERIVATIVE_RE.test(text)) return true;
@@ -379,15 +392,12 @@ export async function resolveItunesToMbid(
     if (cached) return cached;
   }
 
-  const cleanTitle = title
-    .replace(/\s*[\(\[](remaster|remastered|deluxe|live|radio edit|single edit|version|edit|remix)[\)\]]/gi, "")
-    .trim();
+  const queryTitle = itunesResolveQueryTitle(title);
 
   try {
-    // Prefer album-scoped Lucene when iTunes gave us a collection name
     const luceneQuery = album
-      ? `recording:"${cleanTitle}" AND artist:"${artist}" AND release:"${album}"`
-      : `recording:"${cleanTitle}" AND artist:"${artist}"`;
+      ? `recording:"${queryTitle}" AND artist:"${artist}" AND release:"${album}"`
+      : `recording:"${queryTitle}" AND artist:"${artist}"`;
 
     let searchResult = await searchRecordings(luceneQuery, 15, 0);
     let recordings = searchResult.recordings || [];
@@ -395,7 +405,7 @@ export async function resolveItunesToMbid(
     // Fallback without release filter if album-scoped search is empty
     if (recordings.length === 0 && album) {
       searchResult = await searchRecordings(
-        `recording:"${cleanTitle}" AND artist:"${artist}"`,
+        `recording:"${queryTitle}" AND artist:"${artist}"`,
         15,
         0
       );
@@ -404,14 +414,14 @@ export async function resolveItunesToMbid(
 
     const ranked = [...recordings].sort(
       (a, b) =>
-        scoreMbRecording(b, artist, cleanTitle, album, durationMs) -
-        scoreMbRecording(a, artist, cleanTitle, album, durationMs)
+        scoreMbRecording(b, artist, queryTitle, album, durationMs) -
+        scoreMbRecording(a, artist, queryTitle, album, durationMs)
     );
 
     const { mbid: topPick } = pickBestRecording(
       ranked,
       artist,
-      cleanTitle,
+      queryTitle,
       album,
       durationMs
     );
@@ -427,7 +437,7 @@ export async function resolveItunesToMbid(
       const candidateScore = scoreMbRecording(
         recording,
         artist,
-        cleanTitle,
+        queryTitle,
         album,
         durationMs
       );
@@ -436,7 +446,7 @@ export async function resolveItunesToMbid(
       const verified = await verifyMbidMatchesContext(
         candidateMbid,
         artist,
-        cleanTitle,
+        queryTitle,
         album,
         durationMs
       );

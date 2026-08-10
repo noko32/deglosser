@@ -71,7 +71,10 @@ export default async function SearchPage({
       {allSongs.length === 0 ? (
         <p className="mt-8 text-dg-text-muted">No results found.</p>
       ) : (
-        <SearchResultsList songs={songs} query={q} />
+        <SearchResultsList
+          songs={songs}
+          returnTo={`/search?q=${encodeURIComponent(q)}&page=${page}`}
+        />
       )}
 
       {totalPages > 1 && (

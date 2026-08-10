@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const duration = searchParams.get("duration");
   const preview = searchParams.get("preview");
   const album = searchParams.get("album");
+  const from = searchParams.get("from");
 
   if (!id || !artist || !title) {
     return NextResponse.json(
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
       url.searchParams.set("title", title);
       if (cover) url.searchParams.set("cover", cover);
       if (album) url.searchParams.set("album", album);
+      if (from) url.searchParams.set("from", from);
       return NextResponse.redirect(url);
     } else {
       const url = new URL("/search", request.nextUrl.origin);

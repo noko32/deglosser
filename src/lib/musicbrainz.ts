@@ -43,27 +43,56 @@ interface RawMBRecording {
 }
 
 let lastRequestTime = 0;
+let fetchQueue: Promise<void> = Promise.resolve();
+
+const RETRYABLE = new Set([429, 503]);
+const MAX_ATTEMPTS = 3;
 
 async function rateLimitedFetch(url: string): Promise<Response> {
-  const now = Date.now();
-  const elapsed = now - lastRequestTime;
-  if (elapsed < 1100) {
-    await new Promise((r) => setTimeout(r, 1100 - elapsed));
-  }
-  lastRequestTime = Date.now();
+  const run = async (): Promise<Response> => {
+    let lastStatus = 0;
 
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "application/json",
-    },
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const now = Date.now();
+      const elapsed = now - lastRequestTime;
+      if (elapsed < 1100) {
+        await new Promise((r) => setTimeout(r, 1100 - elapsed));
+      }
+      lastRequestTime = Date.now();
+
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": USER_AGENT,
+          Accept: "application/json",
+        },
+      });
+
+      if (res.ok) return res;
+
+      lastStatus = res.status;
+      if (!RETRYABLE.has(res.status) || attempt === MAX_ATTEMPTS) {
+        throw new Error(
+          `MusicBrainz API error: ${res.status} ${res.statusText}`
+        );
+      }
+
+      await new Promise((r) => setTimeout(r, 1100 * attempt));
+    }
+
+    throw new Error(`MusicBrainz API error: ${lastStatus}`);
+  };
+
+  const prev = fetchQueue;
+  let release!: () => void;
+  fetchQueue = new Promise<void>((resolve) => {
+    release = resolve;
   });
-
-  if (!res.ok) {
-    throw new Error(`MusicBrainz API error: ${res.status} ${res.statusText}`);
+  await prev;
+  try {
+    return await run();
+  } finally {
+    release();
   }
-
-  return res;
 }
 
 export function buildSearchQuery(raw: string): string {

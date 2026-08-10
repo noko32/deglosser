@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { BackgroundGlow } from "@/components/BackgroundGlow";
+import { InternalNavMarker } from "@/components/InternalNavMarker";
 import { PlayerProvider } from "@/context/PlayerContext";
 import { FooterPlayer } from "@/components/FooterPlayer";
 import { GlobalYouTubeDrawer } from "@/components/GlobalYouTubeDrawer";
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans mb-20 sm:mb-24">
         <PlayerProvider>
           <BackgroundGlow />
+          <InternalNavMarker />
           <NavBar />
           {children}
           <FooterPlayer />

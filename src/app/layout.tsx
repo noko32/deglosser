@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo_Black, Geist, Geist_Mono } from "next/font/google";
 import { NavBar } from "@/components/NavBar";
 import { BackgroundGlow } from "@/components/BackgroundGlow";
+import { PresenceNet } from "@/components/PresenceNet";
 import { InternalNavMarker } from "@/components/InternalNavMarker";
 import { PlayerProvider } from "@/context/PlayerContext";
 import { FooterPlayer } from "@/components/FooterPlayer";
@@ -17,6 +18,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const archivoBlack = Archivo_Black({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-archivo-black",
 });
 
 export const viewport = {
@@ -47,11 +54,12 @@ export default function RootLayout({
   const content = (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans mb-20 sm:mb-24">
         <PlayerProvider>
           <BackgroundGlow />
+          <PresenceNet />
           <InternalNavMarker />
           <NavBar />
           {children}

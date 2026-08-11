@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { presenceSurfaceFromPath } from "@/lib/presence";
 
 const presets: Record<string, string> = {
   home: [
@@ -38,11 +39,13 @@ function getPreset(pathname: string): string {
 
 export function BackgroundGlow() {
   const pathname = usePathname();
+  const surface = presenceSurfaceFromPath(pathname);
+  const dimmed = surface === "home" || surface === "search";
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10"
+      className={`pointer-events-none fixed inset-0 -z-10 ${dimmed ? "opacity-45" : ""}`}
       style={{ backgroundImage: getPreset(pathname) }}
     />
   );

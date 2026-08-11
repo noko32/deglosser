@@ -1,12 +1,11 @@
 import { RecentSearches } from "@/components/RecentSearches";
+import { MelomanoBrand } from "@/components/MelomanoBrand";
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 p-4 sm:p-6 lg:p-8">
       <div className="text-center">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight bg-clip-text text-transparent hero-title">
-          Melomano
-        </h1>
+        <MelomanoBrand size="hero" gradientId="melomano-mark-hero" />
         <p className="mt-3 text-base sm:text-lg text-dg-text-secondary">
           Search any song. Get lyrics, BPM, key, credits, and more.
         </p>

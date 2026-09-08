@@ -3,8 +3,8 @@ import { useState, useRef, useCallback } from "react";
 export function useCanvasGestures(containerRef: React.RefObject<HTMLDivElement | null>) {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-  const isPanningRef = useRef(false);
   const pinchStartRef = useRef(0);
   const pinchZoomStartRef = useRef(1);
   const lastTapRef = useRef(0);
@@ -24,21 +24,21 @@ export function useCanvasGestures(containerRef: React.RefObject<HTMLDivElement |
   // Touch handlers
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (e.pointerType === "touch" || e.pointerType === "mouse") {
-      isPanningRef.current = true;
+      setIsPanning(true);
       panStartRef.current = { x: e.clientX, y: e.clientY, panX: panOffset.x, panY: panOffset.y };
     }
   }, [panOffset]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isPanningRef.current) return;
+    if (!isPanning) return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
     const clamped = clampPan(panStartRef.current.panX + dx, panStartRef.current.panY + dy);
     setPanOffset(clamped);
-  }, [clampPan]);
+  }, [isPanning, clampPan]);
 
   const handlePointerUp = useCallback(() => {
-    isPanningRef.current = false;
+    setIsPanning(false);
   }, []);
 
   // Double-tap zoom toggle
@@ -74,7 +74,7 @@ export function useCanvasGestures(containerRef: React.RefObject<HTMLDivElement |
   return {
     panOffset,
     zoom,
-    isPanningRef,
+    isPanning,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,

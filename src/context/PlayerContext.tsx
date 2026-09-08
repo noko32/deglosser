@@ -63,7 +63,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     didHydrateDrawer.current = true;
     try {
       const saved = localStorage.getItem("drawer-state");
-      if (saved === "expanded") setDrawerStateInternal("expanded");
+      if (saved === "expanded") {
+        setTimeout(() => {
+          setDrawerStateInternal("expanded");
+        }, 0);
+      }
     } catch { }
   }, []);
 
@@ -94,7 +98,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       audio.pause();
       audio.onended = null;
     };
-  }, [currentTrack]);
+  }, [currentTrack]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep volume in sync
   useEffect(() => {

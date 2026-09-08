@@ -46,6 +46,7 @@ interface QueryContext {
 const REMIX_QUERY_REGEX = /\bremix\b|\bmix\b|\bfeat\b|\bft\b/i;
 const REMIX_TITLE_REGEX = /\bremix\b/i;
 const SPLIT_QUERY_REGEX = /\s*-\s*|\s+/;
+const EMPTY_VIDEOS: DiscogsVideo[] = [];
 
 function scoreVideo(title: string, ctx?: QueryContext): number {
   const t = title.toLowerCase();
@@ -73,7 +74,7 @@ function scoreVideo(title: string, ctx?: QueryContext): number {
 }
 
 export function DetailsDrawer({ songData: initialSongData }: DetailsDrawerProps) {
-  const { drawerState, setDrawerState, playYoutube, activeYoutubeId, activeSongMbid, activeSongCoverArtUrl, closeYoutube } = usePlayer();
+  const { drawerState, setDrawerState, activeSongMbid, activeSongCoverArtUrl, closeYoutube } = usePlayer();
   const [activeTab, setActiveTab] = useState<TabId>("lyrics");
   const [showReport, setShowReport] = useState(false);
   const [liveSongData, setLiveSongData] = useState<DrawerSongData>(initialSongData);
@@ -96,8 +97,13 @@ export function DetailsDrawer({ songData: initialSongData }: DetailsDrawerProps)
 
     const abortController = new AbortController();
     fetchRef.current = activeSongMbid;
-    setIsLoading(true);
-    setVideoOverride(null);
+    
+    setTimeout(() => {
+      if (fetchRef.current === activeSongMbid) {
+        setIsLoading(true);
+        setVideoOverride(null);
+      }
+    }, 0);
 
     closeYoutube();
 
@@ -137,7 +143,7 @@ export function DetailsDrawer({ songData: initialSongData }: DetailsDrawerProps)
 
   // Resolve best video
   const queryFallback = `${songData.artist} - ${songData.title}`;
-  const videos = songData.discogsEnrichment?.videos ?? [];
+  const videos = songData.discogsEnrichment?.videos ?? EMPTY_VIDEOS;
   const bestVideo = useMemo(() => {
     if (videoOverride) {
       return {
@@ -168,12 +174,6 @@ export function DetailsDrawer({ songData: initialSongData }: DetailsDrawerProps)
   }, [songData.lyrics, songData.audioFeatures, songData.credits.length, songData.discogsEnrichment]);
 
   const effectiveTab = availableTabs.find(t => t.id === activeTab) ? activeTab : (availableTabs[0]?.id || null);
-
-  const handlePlayVideo = () => {
-    if (bestVideo?.id) {
-      playYoutube(bestVideo.id, bestVideo.video.title, videos);
-    }
-  };
 
   return (
     <>

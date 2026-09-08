@@ -85,7 +85,7 @@ export function ArchipelagoCanvas({ initialSong, onNodeClick }: ArchipelagoCanva
   const {
     panOffset,
     zoom,
-    isPanningRef,
+    isPanning,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,
@@ -184,7 +184,7 @@ export function ArchipelagoCanvas({ initialSong, onNodeClick }: ArchipelagoCanva
         style={{
           transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
           transformOrigin: "center center",
-          transition: isPanningRef.current ? "none" : "transform 0.2s ease-out",
+          transition: isPanning ? "none" : "transform 0.2s ease-out",
         }}
       >
         {/* SVG connectors */}

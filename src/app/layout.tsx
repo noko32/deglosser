@@ -54,8 +54,16 @@ export default function RootLayout({
   const content = (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var d=localStorage.getItem("drawer-state");if(d==="expanded"||d==="minimized")document.documentElement.setAttribute("data-drawer",d)}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans mb-20 sm:mb-24">
         <PlayerProvider>
           <BackgroundGlow />

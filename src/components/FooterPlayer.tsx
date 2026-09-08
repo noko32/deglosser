@@ -9,7 +9,7 @@ export function FooterPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-dg-bg/85 backdrop-blur-xl border-t border-dg-text-muted/10 p-3 flex items-center justify-between shadow-[0_-8px_30px_rgb(0_0_0_/_0.3)] animate-[slideUp_0.3s_ease-out]">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-dg-bg/85 backdrop-blur-xl border-t border-dg-text-muted/10 p-3 hidden lg:flex items-center justify-between shadow-[0_-8px_30px_rgb(0_0_0_/_0.3)] animate-[slideUp_0.3s_ease-out]">
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes slideUp {
           from { transform: translateY(100%); }

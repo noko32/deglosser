@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   const preview = searchParams.get("preview");
   const album = searchParams.get("album");
   const from = searchParams.get("from");
+  const format = searchParams.get("format");
 
   if (!id || !artist || !title) {
     return NextResponse.json(
@@ -24,19 +25,30 @@ export async function GET(request: NextRequest) {
   }
 
   const durationMs = duration ? parseInt(duration, 10) : undefined;
+  // Hard server-side deadline — MusicBrainz serial queue: search + verification
+  // = 2×1100ms min + fetch RTT each. Allow up to 12s for legitimate songs.
+  const RESOLVE_TIMEOUT_MS = 12000;
 
   try {
-    const mbid = await resolveItunesToMbid(
-      id,
-      artist,
-      title,
-      cover || undefined,
-      durationMs,
-      preview || undefined,
-      album || undefined
-    );
+    const mbid = await Promise.race([
+      resolveItunesToMbid(
+        id,
+        artist,
+        title,
+        cover || undefined,
+        durationMs,
+        preview || undefined,
+        album || undefined
+      ),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), RESOLVE_TIMEOUT_MS)
+      ),
+    ]);
 
     if (mbid) {
+      if (format === "json") {
+        return NextResponse.json({ mbid });
+      }
       const url = new URL(`/song/${mbid}`, request.nextUrl.origin);
       url.searchParams.set("artist", artist);
       url.searchParams.set("title", title);
@@ -45,6 +57,9 @@ export async function GET(request: NextRequest) {
       if (from) url.searchParams.set("from", from);
       return NextResponse.redirect(url);
     } else {
+      if (format === "json") {
+        return NextResponse.json({ mbid: null, error: "resolution_failed" });
+      }
       const url = new URL("/search", request.nextUrl.origin);
       url.searchParams.set("q", `${title} ${artist}`);
       url.searchParams.set("error", "resolution_failed");
@@ -52,6 +67,12 @@ export async function GET(request: NextRequest) {
     }
   } catch (err: unknown) {
     console.error("Resolution route handler failed:", err);
+    if (format === "json") {
+      return NextResponse.json(
+        { error: errorMessage(err) },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       { error: errorMessage(err) },
       { status: 500 }

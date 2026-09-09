@@ -71,15 +71,15 @@ describe("H1 — resolve route 400 when id/artist/title missing", () => {
     expect(body.error).toMatch(/Missing required parameters/i);
   });
 
-  it("SearchResultsList uses plain <a> for unresolved /api/itunes/resolve hrefs", () => {
+  it("SearchResultsList uses client-side resolution for unresolved songs", () => {
     const src = readFileSync(
       join(__dirname, "../../components/SearchResultsList.tsx"),
       "utf8"
     );
-    expect(src).toMatch(/from "next\/link"/);
-    expect(src).toMatch(/\/api\/itunes\/resolve\?id=/);
-    expect(src).toMatch(/const Nav = song\.mbid \? Link : "a"/);
-    expect(src).toMatch(/<Nav[\s\S]*href=\{href\}/);
+    expect(src).toMatch(/const handleCardClick = async/);
+    expect(src).toMatch(/format: "json"/);
+    expect(src).toMatch(/\/api\/itunes\/resolve\?/);
+    expect(src).toMatch(/router\.push\(`/);
   });
 });
 

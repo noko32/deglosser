@@ -25,7 +25,7 @@ export interface CuratedClassicTrack {
   title: string;
   artist: string;
   bpm: number;
-  musicalKey: string; // Camelot format (e.g. "8A")
+  musicalKey: string;
   coverArtUrl: string;
 }
 
@@ -69,10 +69,10 @@ const CURATED_CLASSICS: CuratedClassicTrack[] = [
 ];
 
 export function calculateLocalRecommendations(bpm: number, camelotKey: string) {
-  // Convert key to Camelot format first! e.g., "D-Minor" -> "7A"
+  // Convert key to Camelot format
   const key = toCamelot(camelotKey).toUpperCase().trim();
   const match = key.match(/^(\d+)([AB])$/);
-  
+
   let compatibleKeys = [key];
   if (match) {
     const num = parseInt(match[1], 10);
@@ -101,21 +101,29 @@ export function calculateLocalRecommendations(bpm: number, camelotKey: string) {
 export async function fetchHarmonicRecommendations(
   mbid: string,
   bpm: number,
-  camelotKey: string
+  camelotKey: string,
+  isEstimated: boolean = false
 ): Promise<Partial<SongData>[]> {
   const djangoUrl = process.env.DJANGO_API_URL || "http://localhost:8001";
-  
+
   let compatibleKeys: string[] = [];
   let minBpm: number = 0;
   let maxBpm: number = 0;
 
-  // Convert raw key to standard Camelot representation first! e.g. "D-Minor" -> "7A"
+  // Convert raw key to standard Camelot representation
   const standardCamelotInput = toCamelot(camelotKey);
 
+  // When metadata is estimated (fallback defaults), widen tolerance
+  const toleranceFactor = isEstimated ? 0.30 : 0.05;
+
   try {
+    if (isEstimated) {
+      // Skip Django for estimated songs
+      throw new Error("Estimated metadata — using local wide-tolerance math");
+    }
     const url = `${djangoUrl}/api/recommendations/?bpm=${bpm}&key=${encodeURIComponent(standardCamelotInput)}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(1000) });
-    
+
     if (res.ok) {
       const data: DjangoRecommendationResponse = await res.json();
       compatibleKeys = data.matching_criteria.compatible_keys;
@@ -128,18 +136,17 @@ export async function fetchHarmonicRecommendations(
     console.warn("Django recommendations microservice unavailable, falling back to local math:", err);
     const local = calculateLocalRecommendations(bpm, standardCamelotInput);
     compatibleKeys = local.compatibleKeys;
-    minBpm = local.bpmRange.min;
-    maxBpm = local.bpmRange.max;
+    minBpm = Math.round(bpm * (1 - toleranceFactor) * 100) / 100;
+    maxBpm = Math.round(bpm * (1 + toleranceFactor) * 100) / 100;
   }
 
   const roundedMin = Math.floor(minBpm);
   const roundedMax = Math.ceil(maxBpm);
 
-  // Translate compatible Camelot keys (like "7A", "8A") into standard database names
-  // (like "D-Minor", "A-Minor") so we can retrieve correct results from sparse local PostgreSQL
+  // Translate compatible Camelot keys into standard database names
   const databaseQueryKeys = getDbMatchingKeys(compatibleKeys);
 
-  // 1. Gather local DB candidates matching criteria
+  // Gather local DB candidates matching criteria
   let dbRecommendations: Partial<SongData>[] = [];
   try {
     const db = getDb();
@@ -168,15 +175,14 @@ export async function fetchHarmonicRecommendations(
       title: r.title,
       artist: r.artist,
       bpm: r.bpm,
-      musicalKey: toCamelot(r.musicalKey || ""), // Display as Camelot code in UI
+      musicalKey: toCamelot(r.musicalKey || ""),
       coverArtUrl: r.coverArtUrl?.replace("http://", "https://") ?? null,
     }));
   } catch (err) {
     console.error("Failed to query harmonic songs from DB:", err);
   }
 
-  // 2. Synthesize curated classics if database density is low
-  // This guarantees that the user ALWAYS sees beautiful floating song bubbles to explore and click!
+  // Synthesize curated classics
   const targetKeysSet = new Set(compatibleKeys.map(k => k.toUpperCase()));
   const matchingClassics = CURATED_CLASSICS.filter(track => {
     const keyMatch = targetKeysSet.has(track.musicalKey.toUpperCase());
@@ -192,7 +198,20 @@ export async function fetchHarmonicRecommendations(
     coverArtUrl: c.coverArtUrl,
   }));
 
-  // Deduplicate combined lists (prioritizing DB tracks over matching synthetic classics if title matches)
+  // For estimated songs with sparse results, pull in curated classics
+  if (isEstimated && matchingClassics.length < 8) {
+    const allClassics = CURATED_CLASSICS.filter(c => c.mbid !== mbid).map(c => ({
+      mbid: c.mbid,
+      title: c.title,
+      artist: c.artist,
+      bpm: c.bpm,
+      musicalKey: c.musicalKey,
+      coverArtUrl: c.coverArtUrl,
+    }));
+    matchingClassics.push(...allClassics);
+  }
+
+  // Deduplicate combined lists
   const combined = [...dbRecommendations, ...matchingClassics];
   const deduplicated = deduplicateTracks(combined);
 
@@ -200,7 +219,7 @@ export async function fetchHarmonicRecommendations(
 }
 
 /**
- * Robust deduplication helper that normalizes titles and artists
+ * deduplication helper that normalizes titles and artists
  * (resolves "&" vs "and", punctuation, spacing, and casing differences)
  * and prefers records containing valid cover art URLs.
  */
@@ -211,7 +230,6 @@ function deduplicateTracks(tracks: Partial<SongData>[]): Partial<SongData>[] {
   for (const track of tracks) {
     if (!track.title || !track.artist) continue;
 
-    // Normalize both title and artist to catch fuzzy duplicates
     const normTitle = track.title
       .toLowerCase()
       .replace(/&/g, "and")
@@ -228,7 +246,6 @@ function deduplicateTracks(tracks: Partial<SongData>[]): Partial<SongData>[] {
       seen.add(dedupeKey);
       unique.push(track);
     } else {
-      // If duplicate found, prioritize the one that has a coverArtUrl
       const existingIdx = unique.findIndex(t => {
         const tTitle = t.title!.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "").trim();
         const tArtist = t.artist!.toLowerCase().replace(/[^a-z0-9]/g, "").trim();

@@ -26,8 +26,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const isEstimated = searchParams.get("estimated") === "true";
+
   try {
-    const recommendations = await fetchHarmonicRecommendations(mbid, bpm, key);
+    const recommendations = await fetchHarmonicRecommendations(mbid, bpm, key, isEstimated);
     return NextResponse.json({
       status: "success",
       recommendations,

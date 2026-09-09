@@ -53,6 +53,14 @@ body {
   color: var(--dg-text);
 }
 
+/* FOUC-free drawer state — set by blocking <head> script before paint */
+html[data-drawer="minimized"] .details-drawer--mobile {
+  transform: translateY(calc(100% - 76px));
+}
+html[data-drawer="expanded"] .details-drawer--mobile {
+  transform: translateY(0);
+}
+
 @layer components {
   .glass-header {
     background: var(--dg-surface-glass);
@@ -118,6 +126,23 @@ body {
   @keyframes color-drift {
     0% { background-position: 0% 50%; }
     100% { background-position: 300% 50%; }
+  }
+
+  /* BPM-synced animations for ArchipelagoCanvas */
+  @keyframes bpm-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.25; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.6; }
+  }
+
+  @keyframes bpm-emit-fade {
+    0% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.8); }
+    100% { opacity: 0; transform: scale(0.3); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   .btn-hero:hover {
